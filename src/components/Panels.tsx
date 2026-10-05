@@ -159,6 +159,9 @@ export function CityPanel() {
       <Bar name="Air pollution" value={st.airAvg * 1.5} color="#a0603a" /><Bar name="Noise" value={st.noiseAvg * 1.5} color="#c28a3a" />
       <div className="rowline"><span>Weather</span><span>{w.weather} · {st.floodedTiles} flooded</span></div>
       <hr />
+      <div className="lbl" style={{ marginBottom: 6 }}>Districts</div>
+      {w.districts.length === 0 ? <div className="muted">Districts appear as neighbourhoods fill in.</div> : <div className="list">{w.districts.slice(0, 8).map((d) => <div key={d.id} className="li" onClick={() => s.view?.focusOn(d.x, d.y, 34)}><b>{d.name}</b><span className="muted" style={{ marginLeft: 'auto' }}>{d.kind}</span></div>)}</div>}
+      <hr />
       <div className="lbl" style={{ marginBottom: 6 }}>Progression</div>
       {next ? <div className="muted" style={{ fontSize: 12.5 }}>Next: <b style={{ color: 'var(--text)' }}>{next.pop.toLocaleString('en-IN')} citizens</b> — {next.text}</div> : <div className="good">You have reached the metropolis stage.</div>}
       <div className="col" style={{ marginTop: 8, gap: 4 }}>{unlocks.map(([p, t]) => <div key={p} className="rowline" style={{ opacity: w.isUnlocked(p) ? 1 : 0.55 }}><span>{p.toLocaleString('en-IN')}</span><span style={{ textAlign: 'right', maxWidth: 260 }}>{w.isUnlocked(p) ? '✓ ' : ''}{t}</span></div>)}</div>

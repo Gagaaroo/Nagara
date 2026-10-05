@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import type { World } from '../game/world';
 import { Building, HEIGHT_SCALE, ID } from '../game/types';
 import { DEFS, BuildingDef } from '../data/buildings';
-import { MeshBuilder } from './meshBuilder';
+import { MeshBuilder, signAtlas } from './meshBuilder';
 import { AWNING, ROOF_COLORS, WALL_PALETTES } from './palette';
 
 const HS = HEIGHT_SCALE;
@@ -13,8 +13,13 @@ const rnd = (seed: number, k: number) => { let h = (seed * 2654435761 + k * 4050
 const shade = (c: number, f: number) => { const r = Math.min(255, Math.round(((c >> 16) & 255) * f)), g = Math.min(255, Math.round(((c >> 8) & 255) * f)), b = Math.min(255, Math.round((c & 255) * f)); return (r << 16) | (g << 8) | b; };
 const desat = (c: number, f: number) => { const r = (c >> 16) & 255, g = (c >> 8) & 255, b = c & 255; const m = (r + g + b) / 3; const mx = (a: number) => Math.round(m + (a - m) * f); return (mx(r) << 16) | (mx(g) << 8) | mx(b); };
 
-interface Ctx { mb: MeshBuilder; W: number; D: number; sx: number; sz: number; levels: number; v: number; wealth: number; def: BuildingDef; wall: number; roof: number; accent: number; dim: boolean }
+interface Ctx { mb: MeshBuilder; sb: MeshBuilder; W: number; D: number; sx: number; sz: number; levels: number; v: number; wealth: number; def: BuildingDef; wall: number; roof: number; accent: number; dim: boolean }
 
+function sign(c: Ctx, x: number, y: number, z: number, w: number, h: number, k = 0) {
+  const cell = (c.v * 7 + k * 5) % 32, col = cell % 4, row = Math.floor(cell / 4);
+  const u0 = col / 4, u1 = (col + 1) / 4, v1 = 1 - row / 8, v0 = 1 - (row + 1) / 8;
+  c.sb.quad([x - w / 2, y, z], [x + w / 2, y, z], [x + w / 2, y + h, z], [x - w / 2, y + h, z], 0xffffff, [u0, v0, u1, v0, u1, v1, u0, v1]);
+}
 function tank(mb: MeshBuilder, x: number, y: number, z: number, r = 0.035) {
   mb.cylinder(x, y, z, r, 0.06, 0xdfe7ea, 8);
   mb.cylinder(x, y, z, r * 0.2, 0.0, 0x444444, 3, r * 0.2, false);
@@ -98,8 +103,10 @@ const SHAPES: Record<string, (c: Ctx) => void> = {
     for (const x of [-sx * 0.32, sx * 0.32]) tank(mb, x, h, 0, 0.04);
     void v;
   },
-  shop: ({ mb, sx, sz, levels, v, wall, accent }) => {
+  shop: (c) => {
+    const { mb, sx, sz, levels, v, wall, accent } = c;
     const bw = sx * 0.84, bd = sz * 0.76;
+    sign(c, 0, 0.085, bd / 2 + 0.017, bw * 0.66, 0.03 * 1.0, 1);
     const h = levels * FLOOR * 0.92 + 0.02;
     mb.box(0, 0, 0, bw, h, bd, wall, { bays: 4, floors: levels });
     mb.box(0, 0.0, bd / 2 + 0.002, bw * 0.9, 0.055, 0.004, 0x30363b, { noBottom: true });
@@ -107,7 +114,8 @@ const SHAPES: Record<string, (c: Ctx) => void> = {
     mb.box(0, 0.085, bd / 2 + 0.01, bw * 0.7, 0.03, 0.012, AWNING[(v + 2) % AWNING.length], { noBottom: true });
     parapet(mb, bw, bd, h, shade(wall, 0.85));
   },
-  bazaar: ({ mb, sx, sz, levels, v, wall }) => {
+  bazaar: (c) => {
+    const { mb, sx, sz, levels, v, wall } = c;
     const n = Math.max(3, Math.round(sx / 0.32));
     const uw = (sx * 0.96) / n;
     for (let i = 0; i < n; i++) {
@@ -115,13 +123,16 @@ const SHAPES: Record<string, (c: Ctx) => void> = {
       const h = (levels + (rnd(v, i) < 0.4 ? 0 : -0.3)) * FLOOR * 0.9 + 0.03;
       mb.box(x, 0, -sz * 0.12, uw * 0.94, h, sz * 0.5, WALL_PALETTES[(v + i) % 5][i % 4], { bays: 3, floors: Math.round(levels) });
       awning(mb, x, 0.06, sz * 0.13, uw * 0.94, AWNING[(v + i) % AWNING.length]);
+      sign(c, x, 0.085, sz * 0.13 + 0.002, uw * 0.8, 0.025, i);
       // stall in front
       mb.box(x, 0, sz * 0.34, uw * 0.5, 0.035, 0.07, 0x9b7b58, { noBottom: true });
       mb.pyramid(x, 0.075, sz * 0.34, uw * 0.7, 0.14, 0.03, 0.03, AWNING[(v + i + 3) % AWNING.length]);
     }
     void wall;
   },
-  mall: ({ mb, sx, sz, levels, wall, accent }) => {
+  mall: (c) => {
+    const { mb, sx, sz, levels, wall, accent } = c;
+    sign(c, 0, levels * FLOOR * 0.62 + 0.002, sz * 0.43 + 0.041, sx * 0.55, 0.05, 3);
     const h = levels * FLOOR;
     mb.box(0, 0, 0, sx * 0.92, h, sz * 0.86, shade(wall, 0.96), { bays: 4, floors: levels });
     mb.box(0, 0.02, sz * 0.43 + 0.004, sx * 0.8, h * 0.5, 0.01, 0x7fa6b8, { noBottom: true });
@@ -381,7 +392,9 @@ const SHAPES: Record<string, (c: Ctx) => void> = {
     mb.box(0, 0.006, sz * 0.44, sx * 0.98, 0.03, 0.012, 0xbbb7a8, { noBottom: true });
     for (let i = 0; i < 6; i++) { mb.box(-sx * 0.4 + (sx * 0.8 * i) / 5, 0, sz * 0.38, 0.01, 0.1, 0.01, 0x777b7e, { noBottom: true }); mb.box(-sx * 0.4 + (sx * 0.8 * i) / 5, 0.1, sz * 0.38, 0.03, 0.02, 0.03, 0xfff2b0, { noBottom: true }); }
   },
-  mixed: ({ mb, sx, sz, levels, v, wall, accent }) => {
+  mixed: (c) => {
+    const { mb, sx, sz, levels, v, wall, accent } = c;
+    sign(c, 0, 0.078, sz * 0.41 + 0.005, sx * 0.6, 0.03, 2);
     const h = levels * FLOOR;
     mb.box(0, 0, 0, sx * 0.9, FLOOR, sz * 0.82, 0xd6cfc0, { bays: 5, floors: 1 });
     awning(mb, 0, 0.068, sz * 0.41, sx * 0.88, accent);
@@ -407,7 +420,8 @@ function construction(mb: MeshBuilder, sx: number, sz: number, H: number, progre
 
 export class BuildingView {
   group = new THREE.Group();
-  chunks = new Map<number, { sig: string; mesh: THREE.Mesh | null }>();
+  chunks = new Map<number, { sig: string; mesh: THREE.Mesh | null; sign: THREE.Mesh | null }>();
+  signMat = new THREE.MeshStandardMaterial({ vertexColors: true, map: signAtlas(), roughness: 0.7, emissive: new THREE.Color(0xffffff), emissiveMap: null, emissiveIntensity: 0 });
   material: THREE.MeshStandardMaterial;
   glowMat: THREE.MeshStandardMaterial;
   version = -1;
@@ -420,10 +434,16 @@ export class BuildingView {
   dispose() { this.group.removeFromParent(); for (const c of this.chunks.values()) c.mesh?.geometry.dispose(); }
 
   setVisible(v: boolean) { this.group.visible = v; }
+  setNight(n: number) { this.signMat.emissiveIntensity = n * 0.55; this.signMat.emissiveMap = this.signMat.map; this.signMat.needsUpdate = false; }
 
   /** Rebuild chunks whose building set or construction state changed. */
   sync(force = false) {
     const w = this.world;
+    for (const [x0, y0, x1, y1] of w.dirtyRects) {
+      for (let cy = Math.floor(y0 / CH); cy <= Math.floor(y1 / CH); cy++) for (let cx = Math.floor(x0 / CH); cx <= Math.floor(x1 / CH); cx++) { const c = this.chunks.get(cy * 64 + cx); if (c) c.sig = ''; }
+      force = true;
+    }
+    w.dirtyRects.length = 0;
     const key = w.buildingVersion + w.terrainVersion * 1000;
     const now = performance.now();
     const constructing = [...w.buildings.values()].some((b) => b.progress < 1);
@@ -437,22 +457,25 @@ export class BuildingView {
       if (!a) byChunk.set(k, (a = []));
       a.push(b);
     }
-    for (const [k, c] of this.chunks) if (!byChunk.has(k)) { c.mesh?.geometry.dispose(); if (c.mesh) this.group.remove(c.mesh); this.chunks.delete(k); }
+    for (const [k, c] of this.chunks) if (!byChunk.has(k)) { c.mesh?.geometry.dispose(); if (c.mesh) this.group.remove(c.mesh); if (c.sign) { c.sign.geometry.dispose(); this.group.remove(c.sign); } this.chunks.delete(k); }
     for (const [k, list] of byChunk) {
-      const sig = list.map((b) => `${b.id}:${b.level}:${Math.floor(b.progress * 5)}:${b.abandoned ? 1 : 0}:${b.wealth}`).join('|') + `|${w.terrainVersion}`;
+      const sig = list.map((b) => `${b.id}:${b.level}:${Math.floor(b.progress * 5)}:${b.abandoned ? 1 : 0}:${b.wealth}`).join('|');
       const old = this.chunks.get(k);
       if (old && old.sig === sig) continue;
       if (old?.mesh) { old.mesh.geometry.dispose(); this.group.remove(old.mesh); }
-      const mb = new MeshBuilder();
-      for (const b of list) this.addBuilding(mb, b);
+      if (old?.sign) { old.sign.geometry.dispose(); this.group.remove(old.sign); }
+      const mb = new MeshBuilder(), sb = new MeshBuilder();
+      for (const b of list) this.addBuilding(mb, sb, b);
       const mesh = new THREE.Mesh(mb.build(), this.material);
       mesh.frustumCulled = true;
       this.group.add(mesh);
-      this.chunks.set(k, { sig, mesh });
+      let sign: THREE.Mesh | null = null;
+      if (sb.vertexCount) { sign = new THREE.Mesh(sb.build(), this.signMat); this.group.add(sign); }
+      this.chunks.set(k, { sig, mesh, sign });
     }
   }
 
-  private addBuilding(mb: MeshBuilder, b: Building) {
+  private addBuilding(mb: MeshBuilder, sb: MeshBuilder, b: Building) {
     const w = this.world, t = w.terrain, V = t.n + 1;
     const def = DEFS[b.def];
     if (!def) return;
@@ -472,6 +495,7 @@ export class BuildingView {
       mb.box(0, 0, 0, b.w * 0.94, gy - hMin * HS + 0.05, b.h * 0.94, 0x77746c, { noBottom: true });
     }
     mb.setTransform(cx, gy, cz, rot);
+    sb.setTransform(cx, gy, cz, rot);
     const pal = WALL_PALETTES[(b.variant + (b.wealth === 0 ? 2 : b.wealth === 2 ? 1 : 0)) % WALL_PALETTES.length];
     let wall = pal[b.variant % 4];
     if (b.wealth === 0) wall = shade(desat(wall, 0.85), 0.94);
@@ -486,9 +510,10 @@ export class BuildingView {
       construction(mb, sx, sz, H, b.progress);
     } else {
       const fn = SHAPES[def.shape] ?? SHAPES.small;
-      const ctx: Ctx = { mb, W, D, sx, sz, levels, v: b.variant, wealth: b.wealth, def, wall, roof, accent, dim };
+      const ctx: Ctx = { mb, sb, W, D, sx, sz, levels, v: b.variant, wealth: b.wealth, def, wall, roof, accent, dim };
       fn(ctx);
     }
     mb.setTransform(0, 0, 0, 0);
+    sb.setTransform(0, 0, 0, 0);
   }
 }

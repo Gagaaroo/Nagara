@@ -29,7 +29,7 @@ export function computeDemand(world: World) {
   if (housingFree > 0.35) r *= 0.45; // plenty of empty homes already
   if (pop < 80) r = Math.max(r, 0.6);
   const comTarget = pop * 0.07;
-  const c = 0.12 + 1.1 * (comTarget - comJobs) / Math.max(30, comTarget) ;
+  const c = Math.max(0.08, 0.12 + 1.1 * (comTarget - comJobs) / Math.max(30, comTarget));
   const indTarget = earners * 0.3 + 12;
   const i = 0.1 + 1.0 * (indTarget - indJobs) / Math.max(30, indTarget) + (unemployed > earners * 0.12 ? 0.25 : 0);
   const offTarget = pop > 3500 ? earners * 0.17 : 0;

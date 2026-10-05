@@ -62,12 +62,14 @@ export class GameView {
   private hoverTimer = 0;
   private cleanup: (() => void)[] = [];
   private lastTerrainVer = -1;
+  private noRender = new URLSearchParams(location.search).has('norender');
 
   constructor(public container: HTMLElement, public store: Store) {
     const world = store.world!;
     this.world = world;
     this.renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance', preserveDrawingBuffer: true });
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2) * store.settings.renderScale);
+    const urlScale = Number(new URLSearchParams(location.search).get('scale'));
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2) * (urlScale > 0 ? urlScale : store.settings.renderScale));
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.domElement.style.display = 'block';
     this.renderer.domElement.style.touchAction = 'none';
@@ -309,7 +311,7 @@ export class GameView {
     this.vehicles.update(sim.traffic, cp, this.time);
     this.vehicles.syncSignals(this.roads, sim.traffic);
     this.updateRain(dt);
-    this.renderer.render(this.scene, this.rig.camera);
+    if (!this.noRender) this.renderer.render(this.scene, this.rig.camera);
   }
 
   private syncViews(dt: number) {
@@ -372,6 +374,8 @@ export class GameView {
           this.overlayTex.magFilter = THREE.NearestFilter; this.overlayTex.minFilter = THREE.NearestFilter;
           this.overlayTex.colorSpace = THREE.SRGBColorSpace;
         }
+        const smooth = key === 'elevation' || key === 'slope' || key === 'landvalue' || key === 'popden' || key === 'jobden' || key === 'pollution' || key === 'noise' || key === 'pt' || key === 'walk' || key === 'bike' || key === 'lastmile';
+        this.overlayTex.magFilter = smooth ? THREE.LinearFilter : THREE.NearestFilter;
         this.overlayTex.needsUpdate = true;
         this.terrain.setOverlay(this.overlayTex, 1);
       }
@@ -409,6 +413,7 @@ export class GameView {
     this.hemi.groundColor.setRGB(0.3 + 0.12 * day, 0.35 + 0.15 * day, 0.28 + 0.08 * day);
     this.buildMat.emissiveIntensity = night * 1.25 + (rain > 0.5 ? 0.15 : 0);
     this.furniture.setNight(night);
+    this.buildings.setNight(night);
     this.terrain.waterMat.color.setRGB(0.32 * (0.3 + 0.7 * day), 0.62 * (0.3 + 0.7 * day), 0.82 * (0.35 + 0.65 * day));
     this.terrain.waterMat.emissive.setRGB(0.04 * day, 0.1 * day, 0.14 * day);
     this.terrain.waterMat.opacity = 0.88;

@@ -172,3 +172,27 @@ export function windowTexture(): { map: THREE.CanvasTexture; glow: THREE.CanvasT
   };
   return { map: mk(false), glow: mk(true) };
 }
+
+/** 4×8 atlas of fictional shop signs (English plus Hindi/regional-inspired words). No real brands. */
+export function signAtlas(): THREE.CanvasTexture {
+  const words = ['Fresh Mart', 'स्वागत', 'City Stores', 'चाय', 'Anna Tiffin', 'தேநீர்', 'Nagar Bazaar', 'ತಿಂಡಿ', 'Sri Sabzi', 'మార్కెట్', 'Metro Chai', 'दुकान', 'Green Grocers', 'அங்காடி', 'Daily Needs', 'बाज़ार',
+    'Tailor & Sons', 'Medico', 'Sweet House', 'Book Point', 'Cycle Works', 'Mobile Care', 'Spice Lane', 'Fruit Stall', 'Idli Corner', 'Dosa House', 'Paan Shop', 'Kirana', 'Textiles', 'Hardware', 'Bakery', 'Juice Bar'];
+  const bg = ['#e8743b', '#2fa89a', '#d9a21b', '#c4483f', '#3e8fd4', '#8b6fcf', '#58a65c', '#f0ece0'];
+  const c = document.createElement('canvas');
+  c.width = 512; c.height = 256;
+  const g = c.getContext('2d')!;
+  for (let i = 0; i < 32; i++) {
+    const x = (i % 4) * 128, y = Math.floor(i / 4) * 32;
+    g.fillStyle = bg[(i * 3 + Math.floor(i / 4)) % bg.length];
+    g.fillRect(x, y, 128, 32);
+    g.fillStyle = 'rgba(0,0,0,.18)'; g.fillRect(x, y + 28, 128, 4);
+    g.fillStyle = bg[(i * 3 + Math.floor(i / 4)) % bg.length] === '#f0ece0' || bg[(i * 3 + Math.floor(i / 4)) % bg.length] === '#d9a21b' ? '#2a2a2a' : '#ffffff';
+    g.font = '600 18px "Noto Sans", "Segoe UI", system-ui, sans-serif';
+    g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillText(words[i], x + 64, y + 16, 118);
+  }
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.anisotropy = 4;
+  return t;
+}

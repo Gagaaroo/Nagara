@@ -170,15 +170,36 @@ export class Simulation {
       if (w.history.length > 160) w.history.shift();
     }
     for (const mi of MILESTONES) if (w.maxPop >= mi.pop && !w.milestones.includes(mi.pop)) { w.milestones.push(mi.pop); w.notify(`${mi.pop.toLocaleString('en-IN')} citizens — ${mi.text}`, 'good'); }
-    if (w.day - w.autosaveDay >= 30) { w.autosaveDay = w.day; this.autosave?.(w); }
+    if (w.day - w.autosaveDay >= 15) { w.autosaveDay = w.day; this.autosave?.(w); }
   }
 
   private onMonth() {
     const w = this.world;
+    updateDistricts(w);
     upgradeStep(w);
     w.stats.sprawl = sprawlIndex(w);
     if (w.stats.sprawl > 0.6 && w.month % 3 === 0) w.notify('Sprawl is raising road upkeep and commute distances', 'warn');
   }
+}
+
+/** Group the city into named districts by 24-tile cells, labelled by dominant land use. */
+export function updateDistricts(world: World) {
+  const cells = new Map<number, { x: number; y: number; res: number; com: number; ind: number; off: number; pop: number; n: number }>();
+  for (const b of world.buildings.values()) {
+    if (b.progress < 1) continue;
+    const gx = Math.floor(b.x / 24), gy = Math.floor(b.y / 24), k = gy * 100 + gx;
+    let c = cells.get(k);
+    if (!c) cells.set(k, (c = { x: gx * 24 + 12, y: gy * 24 + 12, res: 0, com: 0, ind: 0, off: 0, pop: 0, n: 0 }));
+    const cat = DEFS[b.def]?.cat;
+    if (cat === 'res') c.res += b.residents; else if (cat === 'com' || cat === 'market' || cat === 'mixed') { c.com += b.jobs; c.res += b.residents * 0.5; }
+    else if (cat === 'ind' || cat === 'logistics') c.ind += b.jobs; else if (cat === 'office') c.off += b.jobs;
+    c.pop += b.residents; c.n++;
+  }
+  world.districts = [...cells.values()].filter((c) => c.n >= 4).map((c, i) => {
+    const kinds: [string, number][] = [['Residential', c.res], ['Commercial', c.com * 1.6], ['Industrial', c.ind], ['Tech & offices', c.off * 1.3]];
+    kinds.sort((a, b) => b[1] - a[1]);
+    return { id: i + 1, name: world.areaName(c.x, c.y), x: c.x, y: c.y, r: 12, kind: kinds[0][0] };
+  });
 }
 
 /** Street vendors cluster near markets, stations, schools, offices and busy footpaths. */

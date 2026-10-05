@@ -201,20 +201,20 @@ export function GameHud() {
           <div className="gh">Camera view</div>
           {lens('city', 'City', 'city')}{lens('transport', 'Transportation', 'road')}{lens('terrain', 'Terrain', 'terrain')}{lens('transit', 'Transit', 'bus')}
         </div>
-        <div className="panel group" style={{ maxHeight: 'calc(100vh - 360px)', overflow: 'auto' }}>
-          {groups.map((g) => (
-            <div key={g}>
-              <div className="gh">{g}</div>
-              {OVERLAYS.filter((o) => o.group === g).map((o) => <button key={o.key} className={'ov' + (s.overlay === o.key ? ' on' : '')} onClick={() => s.setOverlay(o.key)} title={o.hint}><i className="sw" /><span>{o.label}</span></button>)}
-            </div>
-          ))}
-        </div>
         <div className="panel group">
           <button className="ov" onClick={() => s.setPanel('mobility')}><Icon n="chart" size={15} /><span>Mobility</span></button>
           <button className="ov" onClick={() => s.setPanel('city')}><Icon n="city" size={15} /><span>City</span></button>
           <button className="ov" onClick={() => s.setPanel('budget')}><Icon n="budget" size={15} /><span>Budget</span></button>
           <button className="ov" onClick={() => s.setPanel('lines')}><Icon n="lines" size={15} /><span>Transit lines</span></button>
           <button className="ov" onClick={() => s.setPanel('help')}><Icon n="help" size={15} /><span>Help</span></button>
+        </div>
+        <div className="panel group">
+          {groups.map((g) => (
+            <div key={g}>
+              <div className="gh">{g}</div>
+              {OVERLAYS.filter((o) => o.group === g).map((o) => <button key={o.key} className={'ov' + (s.overlay === o.key ? ' on' : '')} onClick={() => s.setOverlay(o.key)} title={o.hint}><i className="sw" /><span>{o.label}</span></button>)}
+            </div>
+          ))}
         </div>
       </div>
 
@@ -231,6 +231,7 @@ export function GameHud() {
       )}
 
       {rightPanel}
+      {s.intro && s.panel === 'none' && !s.selection && s.tool === 'select' && s.dock === 'none' && <Intro />}
       {s.debug && <DebugPanel />}
 
       <div className="toasts">{recent.map((m) => <div key={m.id} className={'toast ' + m.kind}>{m.text}</div>)}{s.message && <div className="toast">{s.message}</div>}</div>
@@ -316,6 +317,29 @@ function BuildInfo() {
       )}
       <div className="row" style={{ marginTop: 12 }}>{rect && <button className="btn" onClick={() => { s.buildRot = (s.buildRot + 1) % 4; s.emit(); }}>Rotate (T)</button>}<button className="btn" onClick={() => s.setTool('select')}>Done</button></div>
     </Side>
+  );
+}
+
+function Intro() {
+  const s = useStore();
+  const w = s.world!;
+  return (
+    <div className="panel tutorial">
+      <div style={{ flex: 1 }}>
+        <div className="tag">Welcome to {w.cityName}</div>
+        <div style={{ fontSize: 16, fontWeight: 600, margin: '3px 0 6px' }}>You are designing an Indian city — and deciding how it moves.</div>
+        <div className="muted" style={{ lineHeight: 1.5 }}>
+          <b style={{ color: 'var(--text)' }}>1.</b> Draw a street (Roads) and tune its lanes, footpaths and bus lane.&nbsp;
+          <b style={{ color: 'var(--text)' }}>2.</b> Zone land beside it (Zoning).&nbsp;
+          <b style={{ color: 'var(--text)' }}>3.</b> Watch autos, scooters and buses appear, then add a bus route (Transport).
+        </div>
+        <div className="row" style={{ marginTop: 10 }}>
+          <button className="btn primary sm" onClick={() => { s.intro = false; s.openDock('roads'); }}>Start with a road</button>
+          <button className="btn sm" onClick={() => { s.intro = false; s.panel = 'help'; s.emit(); }}>How to play</button>
+          <button className="btn sm ghost" onClick={() => { s.intro = false; s.emit(); }}>Dismiss</button>
+        </div>
+      </div>
+    </div>
   );
 }
 

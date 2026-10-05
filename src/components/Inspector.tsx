@@ -3,7 +3,7 @@ import { Side } from './Hud';
 import { Icon } from './Icon';
 import { CrossSection } from './RoadDesigner';
 import { CATEGORY_LABEL, LABELS, describeSpec, isOneWay, capacityDir } from '../game/roads/spec';
-import { FEATURE_UNLOCK, patchNode, patchRoad, reverseRoad, toggleTurnBan, upgradeRoad, bulldozeAt } from '../game/actions';
+import { FEATURE_UNLOCK, patchNode, patchRoad, reverseRoad, toggleTurnBan, upgradeRoad, bulldozeAt, demolishRoad } from '../game/actions';
 import { DEFS } from '../data/buildings';
 import { TURN_LEFT, TURN_RIGHT, TURN_STRAIGHT, TURN_U, WATER_NAMES, Build } from '../game/types';
 import { fmtMoney, pct } from '../utils/math';
@@ -54,7 +54,7 @@ function EdgeInspector({ id }: { id: number }) {
         <div className="seg">{(['allowed', 'banned', 'priority'] as const).map((t) => <button key={t} className={sp.trucks === t ? 'on' : ''} disabled={t === 'priority' && !w.isUnlocked(8000)} onClick={() => patchRoad(w, id, { trucks: t })}>{LABELS[t]}</button>)}</div></div>
       <div className="row" style={{ marginTop: 12 }}>
         <button className="btn" onClick={() => { const r = upgradeRoad(w, id, s.roadSpec); s.flash(r.msg); }}>Apply “{s.roadPreset}”</button>
-        <button className="btn danger" onClick={() => { const r = bulldozeAt(w, e.pts[Math.floor(e.pts.length / 2) - (Math.floor(e.pts.length / 2) % 2)], e.pts[Math.floor(e.pts.length / 2) - (Math.floor(e.pts.length / 2) % 2) + 1], 3); s.flash(r.msg); s.select(null); s.view?.markRoadsDirty(); }}>Demolish</button>
+        <button className="btn danger" onClick={() => { const r = demolishRoad(w, id); s.flash(r.msg); s.select(null); s.view?.markRoadsDirty(); }}>Demolish</button>
       </div>
     </Side>
   );

@@ -1,0 +1,18 @@
+import { createWorld } from '../src/game/simulation/startCity';
+import { Simulation } from '../src/game/simulation/engine';
+import { serialize, deserialize } from '../src/game/save/save';
+import { MapParams } from '../src/game/types';
+const params: MapParams = { seed: 'Save-Test', size: 'small', terrain: 'coastal', region: 'coastal', water: 0.5, mountains: 0.4, forest: 0.5, resources: 'standard', difficulty: 'standard', sandbox: false };
+const w = createWorld(params);
+const sim = new Simulation(w);
+sim.setSpeed(3);
+for (let i = 0; i < 30 * 30; i++) sim.update(1 / 30);
+const data = serialize(w, 'test');
+const json = JSON.stringify(data);
+console.log('save size KB', (json.length / 1024).toFixed(0), 'edges', data.edges.length, 'bld', data.buildings.length, 'diff', data.terrainDiff.i.length);
+const w2 = deserialize(JSON.parse(json));
+const s2 = new Simulation(w2);
+for (let i = 0; i < 30 * 5; i++) s2.update(1 / 30);
+console.log('orig pop', w.stats.population, 'loaded pop', w2.stats.population, 'edges', w.net.edges.size, w2.net.edges.size, 'bld', w.buildings.size, w2.buildings.size, 'money', w.money.toFixed(0), w2.money.toFixed(0), 'day', w.day.toFixed(1), w2.day.toFixed(1));
+let diff = 0; for (let i = 0; i < w.zones.length; i++) if (w.zones[i] !== w2.zones[i]) diff++;
+console.log('zone diff', diff, 'height equal', w.terrain.heights.every((v, i) => Math.abs(v - w2.terrain.heights[i]) < 0.02));

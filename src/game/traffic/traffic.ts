@@ -436,7 +436,8 @@ export class Traffic {
     const ctrl = world.net.resolveControl(node);
     const box = this.boxes.get(nodeId);
     const occ = box ? box.length : 0;
-    if (v.waitTime > 9) { this.debug.gridlock++; return occ < 6; }
+    const limit = ctrl === 'signal' ? 55 : 14;
+    if (v.waitTime > limit) { if (occ >= 3) this.debug.gridlock++; return occ < 8; }
     if (ctrl === 'none') return occ < 3;
     if (ctrl === 'signal') {
       const plan = this.plans.get(nodeId);
@@ -516,7 +517,6 @@ export class Traffic {
             if (!this.canEnter(world, v, e, dir, nodeId)) {
               const g = rem - 0.06 - v.len * 0.5;
               if (g < gap) { gap = g; lv = 0; }
-              if (rem < 0.35 && v.v < 0.05) v.waitTime += dt;
             }
           }
           // ─ bus stop approach
@@ -549,7 +549,7 @@ export class Traffic {
           const acc = (1.5 * ks.accel + 0.3) ;
           if (vt > v.v) v.v = Math.min(vt, v.v + acc * dt); else v.v = Math.max(vt, v.v - bdec * 2.2 * dt);
           if (v.v < 0.05) v.waitTime += dt; else v.waitTime = Math.max(0, v.waitTime - dt * 2);
-          if (v.waitTime > 40) { this.remove(world, v); continue; }
+          if (v.waitTime > 150) { this.remove(world, v); continue; }
           v.s += v.v * dt;
           // ─ lane changes: overtake slow leaders where lanes allow
           if (leader && !filtering && v.state === 'drive' && gap < 0.45 && lv < vfree * 0.7 && rng() < 4 * dt) this.tryLaneChange(world, e, dir, v, i);

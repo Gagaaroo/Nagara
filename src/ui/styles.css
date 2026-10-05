@@ -102,13 +102,13 @@ h1, h2, h3, h4 { margin: 0; font-weight: 600; letter-spacing: -.01em; }
 .item.on { border-color: var(--amber); background: #3a3523; }
 .item b { font-size: 12.5px; font-weight: 600; } .item span { font-size: 11px; color: var(--muted); } .item .cost { color: var(--amber); font-size: 11px; font-variant-numeric: tabular-nums; }
 .item.locked { opacity: .45; cursor: not-allowed; } .item .lockline { color: #f0b36a; font-size: 10.5px; }
-.rail { position: absolute; left: 10px; top: 74px; display: flex; flex-direction: column; gap: 8px; width: 156px; }
+.rail { position: absolute; left: 10px; top: 70px; bottom: 76px; display: flex; flex-direction: column; gap: 8px; width: 156px; overflow-y: auto; overflow-x: hidden; padding-right: 2px; scrollbar-width: thin; }
 .rail .group { padding: 6px; border-radius: 14px; display: flex; flex-direction: column; gap: 3px; }
 .rail .gh { font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--dim); padding: 3px 7px 2px; }
 .rail .ov { display: flex; align-items: center; gap: 8px; padding: 5px 8px; border-radius: 8px; border: 1px solid transparent; background: transparent; text-align: left; color: var(--muted); font-size: 12px; }
 .rail .ov:hover { background: var(--panel2); color: var(--text); } .rail .ov.on { background: #33422f; color: #eaf5e3; border-color: var(--green); }
 .rail .sw { width: 9px; height: 9px; border-radius: 50%; background: var(--dim); flex: none; } .rail .ov.on .sw { background: var(--amber); }
-.legend { position: absolute; left: 176px; top: 74px; padding: 9px 12px; border-radius: 12px; min-width: 210px; }
+.legend { position: absolute; left: 186px; top: 72px; padding: 9px 12px; border-radius: 12px; min-width: 210px; }
 .legend .bar { height: 8px; border-radius: 6px; margin: 7px 0 4px; } .legend .ends { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); } .legend b { font-size: 12px; }
 .side { position: absolute; right: 10px; top: 70px; bottom: 72px; width: 354px; max-width: calc(100vw - 20px); display: flex; flex-direction: column; border-radius: 16px; overflow: hidden; }
 .side .sh { padding: 12px 14px; border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 8px; }
@@ -138,7 +138,7 @@ h1, h2, h3, h4 { margin: 0; font-weight: 600; letter-spacing: -.01em; }
 .steps { display: flex; gap: 4px; margin-bottom: 12px; } .steps i { flex: 1; height: 4px; border-radius: 3px; background: #323b38; } .steps i.on { background: var(--amber); } .steps i.done { background: var(--green); }
 .rowline { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px dashed #2f3835; font-size: 12.5px; } .rowline:last-child { border-bottom: 0; } .rowline span:first-child { color: var(--muted); }
 .demand { display: flex; gap: 6px; } .demand div { flex: 1; text-align: center; } .demand .col { height: 54px; background: #2c3532; border-radius: 6px; position: relative; overflow: hidden; } .demand .col i { position: absolute; left: 0; right: 0; bottom: 0; } .demand small { color: var(--muted); font-size: 10.5px; }
-.tutorial { position: absolute; left: 50%; transform: translateX(-50%); top: 70px; padding: 14px 18px; border-radius: 16px; max-width: 520px; display: flex; gap: 14px; align-items: flex-start; }
+.tutorial { position: absolute; left: 186px; top: 72px; padding: 14px 18px; border-radius: 16px; max-width: 520px; display: flex; gap: 14px; align-items: flex-start; }
 .debug { position: absolute; left: 176px; bottom: 70px; padding: 9px 12px; border-radius: 12px; font: 11px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace; color: #cfe6cf; min-width: 270px; max-height: 50vh; overflow: auto; }
 .modal-back { position: fixed; inset: 0; background: rgba(8,10,9,.6); display: flex; align-items: center; justify-content: center; z-index: 20; }
 .modal { width: min(560px, calc(100vw - 24px)); max-height: calc(100vh - 40px); overflow: auto; padding: 18px; border-radius: 18px; }

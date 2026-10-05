@@ -87,6 +87,7 @@ export class World {
   msgSeq = 1;
   terrainVersion = 0;
   terrainDirty = false;
+  dirtyRects: [number, number, number, number][] = [];
   buildingVersion = 0;
   zoneVersion = 0;
   stopVersion = 0;

@@ -146,9 +146,9 @@ export class TerrainView {
     for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) {
       const k = j * n + i;
       const f = t.forest[k];
-      if (f < 30 || t.waterKind[k] || w.buildGrid[k]) continue;
+      if (f < 45 || t.waterKind[k] || w.buildGrid[k]) continue;
       if (w.net.isRoadTile(i, j)) continue;
-      const count = f > 190 ? 4 : f > 120 ? 3 : f > 70 ? 2 : 1;
+      const count = f > 200 ? 3 : f > 120 ? 2 : 1;
       for (let c = 0; c < count; c++) {
         const hx = hash2(i * 7 + c, j * 13), hy = hash2(i * 11, j * 5 + c * 3), hr = hash2(i + c * 17, j * 3);
         const x = i + 0.15 + hx * 0.7, y = j + 0.15 + hy * 0.7;

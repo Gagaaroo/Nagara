@@ -258,7 +258,7 @@ export function generateTerrain(params: MapParams): Terrain {
       const m2 = nz.fbm(nx * 2.4 + 55, ny * 2.4 + 55, 3) * 0.5 + 0.5;
       const h = heights[j * V + i];
       const alt = 1 - smoothstep(110, 190, h) * 0.7;
-      const v = (m * 0.55 + m2 * 0.45 + forestK * 0.9 - 0.62) * 3.4 * alt;
+      const v = (m * 0.55 + m2 * 0.45 + forestK * 0.9 - 0.76) * 2.7 * alt;
       forest[k] = Math.round(clamp(v, 0, 1) * 255);
     }
   const t: Terrain = {
@@ -270,7 +270,7 @@ export function generateTerrain(params: MapParams): Terrain {
   for (let j = 0; j < n; j++)
     for (let i = 0; i < n; i++) {
       const k = j * n + i;
-      const core = forest[k] > 205 && nz2.fbm(i * 0.06 + 31, j * 0.06 + 7, 2) > 0.12;
+      const core = forest[k] > 215 && nz2.fbm(i * 0.05 + 31, j * 0.05 + 7, 2) > 0.28;
       if (core || heights[j * V + i] > 165) protectedLand[k] = 1;
     }
   for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) classifyTile(t, i, j);

@@ -79,6 +79,7 @@ class Store {
   message = '';
   designMode = false;
   saveNote = '';
+  intro = true;
   view: import('../rendering/gameView').GameView | null = null;
   fps = 0;
 
@@ -131,7 +132,7 @@ class Store {
     this.screen = 'game';
     this.tool = 'select'; this.dock = 'none'; this.panel = 'none'; this.selection = null; this.overlay = 'none'; this.viewMode = 'city';
     this.roadDraft = { pts: [], plan: null, pending: false, path: [] };
-    this.transitDraft = null; this.designMode = false; this.toastSeen = world.msgSeq;
+    this.transitDraft = null; this.designMode = false; this.toastSeen = world.msgSeq; this.intro = this.settings.hints && world.day < 1;
     this.emit();
   }
 

@@ -113,6 +113,15 @@ export function bulldozeAt(world: World, x: number, y: number, tolerance = 0.55)
   return fail('Nothing to demolish');
 }
 
+export function demolishRoad(world: World, edgeId: ID): Result {
+  const e = world.net.edges.get(edgeId);
+  if (!e) return fail('Select a road');
+  const c = Math.max(0.5, e.cost * 0.1);
+  if (!world.spend(c)) return fail('Not enough funds');
+  world.removeRoad(edgeId);
+  return ok('Road removed');
+}
+
 export function zoneRect(world: World, x0: number, y0: number, x1: number, y1: number, zone: Zone): Result {
   const info = zone === Zone.None ? null : { unlock: zoneUnlock(zone) };
   if (info && !world.isUnlocked(info.unlock)) return fail(`Locked until ${info.unlock.toLocaleString('en-IN')} citizens`);
