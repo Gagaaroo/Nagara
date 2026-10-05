@@ -20,9 +20,10 @@ const road = (x0: number, y0: number, x1: number, y1: number, name: string, mode
   if (plan.pieces.length && (plan.valid || true)) commitRoad(world, plan, spec(name));
   return plan;
 };
+const SPARSE = process.argv[6] === 'sparse';
 // grid of streets
-for (let i = -30; i <= 30; i += 6) { road(cx + i, cy - 34, cx + i, cy + 34, i % 12 === 0 ? 'Collector Road' : 'Local Street', 'ground'); }
-for (let j = -30; j <= 30; j += 6) { road(cx - 34, cy + j, cx + 34, cy + j, j % 12 === 0 ? 'Urban Avenue' : 'Local Street', 'ground'); }
+if (!SPARSE) for (let i = -30; i <= 30; i += 6) { road(cx + i, cy - 34, cx + i, cy + 34, i % 12 === 0 ? 'Collector Road' : 'Local Street', 'ground'); }
+if (!SPARSE) for (let j = -30; j <= 30; j += 6) { road(cx - 34, cy + j, cx + 34, cy + j, j % 12 === 0 ? 'Urban Avenue' : 'Local Street', 'ground'); }
 world.net.touch(true);
 const zone = (x0: number, y0: number, x1: number, y1: number, z: Zone) => world.paintZone(cx + x0, cy + y0, cx + x1, cy + y1, z);
 zone(-30, -30, 30, 30, Zone.ResLow);
@@ -36,6 +37,10 @@ const put = (k: string, x: number, y: number) => { for (let r = 0; r < 12; r++) 
 for (const [k, x, y] of [['school', 6, -4], ['school', -8, 8], ['clinic', 3, 3], ['police', -3, 2], ['fire', 4, -10], ['power_thermal', -34, 20], ['substation', 10, 10], ['substation', -12, -12], ['substation', 12, -12], ['substation', -12, 12], ['water_treatment', -30, -26], ['water_tower', 12, 12], ['water_tower', -12, -10], ['water_tower', 14, -16], ['borewell', 0, 20], ['borewell', 8, 22], ['market_local', 0, -3], ['hospital_gov', -14, 3], ['college', 14, -5], ['auto_stand', 2, 0], ['park_big', 8, 18], ['temple', -20, 4], ['warehouse', 22, -6], ['bus_terminal', 0, 6]] as const) {
   const ok = put(k, x, y); if (!ok) console.log('could not place', k);
 }
+for (let gx = -28; gx <= 28; gx += 14) for (let gy = -28; gy <= 28; gy += 14) { put('substation', gx, gy); put('water_tower', gx + 3, gy + 3); }
+for (const [x, y] of [[-26, -20], [-26, 20], [26, 20]] as const) put('water_treatment', x, y);
+put('power_thermal', -34, -10);
+for (const [x, y] of [[18, 18], [-18, 18], [18, -18], [-18, -18], [0, -22], [0, 24]] as const) { put('school', x, y); put('clinic', x + 4, y + 2); }
 world.refreshAccess();
 // bus route along the central avenue
 const stops: number[] = [];
@@ -55,16 +60,19 @@ console.log('metro line', ml.ok, ml.msg, 'stations', mst.length);
 world.free = false;
 world.money = 99999;
 const dt = 1 / 30;
+let peakCong = 0, peakVeh = 0, minSpd = 99, peakWorst = '';
 const report = () => {
   const s = world.stats, tr = sim.traffic;
-  console.log(`day ${Math.floor(world.day)} pop ${s.population} bld ${world.buildings.size} veh ${tr.vehicles.length} ped ${tr.peds.length} trains ${tr.trains.length} money ${world.money.toFixed(0)} happy ${s.happiness.toFixed(2)} cong ${s.congestion.toFixed(2)} spd ${s.avgSpeed.toFixed(0)} emp ${s.employed}/${s.workers} jobs ${s.jobs} commute ${s.avgCommuteMin.toFixed(0)}m ${s.avgDistKm.toFixed(1)}km | ${Object.entries(s.modal).map(([k, v]) => `${k}${(v * 100).toFixed(0)}`).join(' ')} | R${s.demand.r.toFixed(1)} C${s.demand.c.toFixed(1)} I${s.demand.i.toFixed(1)} O${s.demand.o.toFixed(1)} | lastmile ${s.lastMile.toFixed(2)} pt ${s.ptCoverage.toFixed(2)} unreach ${s.unreachable.toFixed(0)} unserved ${s.unserved} weather ${world.weather} flood ${s.floodedTiles} income ${s.incomeMonth.toFixed(0)}/${s.expenseMonth.toFixed(0)}`);
+  console.log(`day ${Math.floor(world.day)} pop ${s.population} bld ${world.buildings.size} veh ${tr.vehicles.length} ped ${tr.peds.length} trains ${tr.trains.length} money ${world.money.toFixed(0)} happy ${s.happiness.toFixed(2)} peakCong ${peakCong.toFixed(2)} (${peakWorst}) minSpd ${minSpd.toFixed(0)} peakVeh ${peakVeh} K ${tr.debug.kScale.toFixed(1)} emp ${s.employed}/${s.workers} jobs ${s.jobs} commute ${s.avgCommuteMin.toFixed(0)}m ${s.avgDistKm.toFixed(1)}km | ${Object.entries(s.modal).map(([k, v]) => `${k}${(v * 100).toFixed(0)}`).join(' ')} | R${s.demand.r.toFixed(1)} C${s.demand.c.toFixed(1)} I${s.demand.i.toFixed(1)} O${s.demand.o.toFixed(1)} | lastmile ${s.lastMile.toFixed(2)} pt ${s.ptCoverage.toFixed(2)} unreach ${s.unreachable.toFixed(0)} unserved ${s.unserved} weather ${world.weather} flood ${s.floodedTiles} income ${s.incomeMonth.toFixed(0)}/${s.expenseMonth.toFixed(0)}`);
 };
 const days = Number(process.argv[5] ?? 40);
 let next = 5;
 const t0 = Date.now();
 while (world.day < days) {
   sim.update(dt);
-  if (world.day >= next) { report(); next += 5; }
+  if (world.stats.congestion > peakCong) { peakCong = world.stats.congestion; let worst = 0; for (const e of world.net.edges.values()) { const v = Math.max(e.flowVc?.[0] ?? 0, e.flowVc?.[1] ?? 0); if (v > worst) { worst = v; peakWorst = e.spec.name + ' ' + v.toFixed(2); } } }
+  peakVeh = Math.max(peakVeh, sim.traffic.vehicles.length); if (world.stats.avgSpeed > 0) minSpd = Math.min(minSpd, world.stats.avgSpeed);
+  if (world.day >= next) { report(); next += 5; peakCong = 0; peakVeh = 0; minSpd = 99; }
 }
 report();
 console.log('wall', ((Date.now() - t0) / 1000).toFixed(1), 's; simMs', sim.debug.simMs.toFixed(2), 'jobs', JSON.stringify(sim.debug.jobMs));

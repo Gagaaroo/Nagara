@@ -106,6 +106,7 @@ export class World {
   cloud = 0.2;
   n: number;
   traffic_hasNoWarehouse = false;
+  lastWarn: Record<string, number> = {};
 
   constructor(public params: MapParams, public terrain: Terrain) {
     this.n = terrain.n;
@@ -156,6 +157,13 @@ export class World {
   notify(text: string, kind: Message['kind'] = 'info') {
     this.messages.push({ id: this.msgSeq++, text, kind, t: Date.now() });
     if (this.messages.length > 60) this.messages.shift();
+  }
+
+  /** Notify at most once per `days` for a given topic. */
+  warnOnce(topic: string, days: number, text: string, kind: Message['kind'] = 'warn') {
+    if (this.day - (this.lastWarn[topic] ?? -999) < days) return;
+    this.lastWarn[topic] = this.day;
+    this.notify(text, kind);
   }
 
   spend(cost: number): boolean {

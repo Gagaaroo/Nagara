@@ -121,7 +121,7 @@ export function generalLanes(s: RoadSpec, dir: number): number {
 export function capacityDir(s: RoadSpec, dir: number): number {
   const gl = generalLanes(s, dir);
   if (gl === 0 && (dir === 0 ? s.lanesFwd : s.lanesBwd) === 0) return 0;
-  const perLane = clamp(850 + 9 * s.speed, 900, 1800);
+  const perLane = clamp(480 + 6 * s.speed, 600, 1300);
   let f = 1;
   f -= s.parking === 'parallel' ? 0.12 : s.parking === 'angled' ? 0.22 : 0;
   if (s.sidewalk === 'none' && s.speed <= 60) f -= 0.1; // pedestrians spill onto the carriageway

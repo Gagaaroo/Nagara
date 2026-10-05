@@ -309,6 +309,7 @@ export function commitRoad(world: World, plan: RoadPlan, spec: RoadSpec): RoadEd
     if (piece.structure === 'ground' || piece.structure === 'depressed') terraform(world, e);
   }
   for (const e of created) world.afterRoadAdded(e);
+  net.pruneOrphans();
   net.touch(true);
   return created;
 }

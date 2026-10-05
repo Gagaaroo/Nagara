@@ -276,7 +276,7 @@ export class Traffic {
       let flow = F.flows[0];
       for (const f of F.flows) { if (!f.route) continue; x -= f.perDay * 2; if (x <= 0) { flow = f; break; } }
       const outbound = this.rng() < 0.5;
-      const r = this.route(world, outbound ? flow.from : flow.to, outbound ? flow.to : flow.from, 'heavy');
+      const r = this.route(world, outbound ? flow.from : flow.to, outbound ? flow.to : flow.from, flow.kind === 'car' || flow.kind === 'taxi' ? 'car' : 'heavy');
       if (!r || !r.edges.length) continue;
       const v = this.newVehicle(flow.kind, r.edges, r.dirs);
       v.color = Math.floor(this.rng() * 8);

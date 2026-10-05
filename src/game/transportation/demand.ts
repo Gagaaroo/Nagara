@@ -25,7 +25,7 @@ export function hourFactor(table: number[], hour: number): number {
   return table[h0] * (1 - f) + table[h1] * f;
 }
 
-export const PCE: Record<number, number> = { [VI.two]: 0.35, [VI.car]: 1, [VI.auto]: 0.8, [VI.bus]: 2.3, [VI.truck]: 2.8 };
+export const PCE: Record<number, number> = { [VI.two]: 0.42, [VI.car]: 1, [VI.auto]: 1.0, [VI.bus]: 2.4, [VI.truck]: 3 };
 
 export interface TripRec {
   cit: Citizen;
@@ -88,9 +88,9 @@ export class Assigner {
         if (!he || !te) return;
         trips.push({ cit: c, purpose, weight, from: nearestNodeOf(world.net, he, hb.accessS), to: nearestNodeOf(world.net, te, tb.accessS), fromB: hb, toB: tb, route: null, p: {}, distKm: 0, timeMin: 0 });
       };
-      if (c.earners && c.work) mk(0, c.work, c.earners * 0.93);
-      if (c.students && c.school) mk(1, c.school, c.students * 0.95);
-      if (c.shop) mk(2, c.shop, c.members * 0.5);
+      if (c.earners && c.work) mk(0, c.work, c.earners * 1.15); // commute + work errands
+      if (c.students && c.school) mk(1, c.school, c.students * 1.15); // school runs incl. drop-offs & tuition
+      if (c.shop) mk(2, c.shop, c.members * 0.85); // shopping, services, visits
     }
     this.trips = trips;
     this.cursor = 0;
@@ -372,6 +372,7 @@ export function updateEdgeTimes(world: World) {
       const cap = capacityDir(e.spec, d) * SC[e.structure] * junc * friction;
       let pce = 0;
       for (const idx of [VI.two, VI.car, VI.auto, VI.bus]) pce += v[d * NV + idx] * hp * PCE[idx];
+      pce += (e.ext?.[d] ?? 0) * hp * PCE[VI.car];
       pce += v[d * NV + VI.truck] * hf * PCE[VI.truck];
       const vc = cap > 1 ? pce / cap : 0;
       e.flowVc![d] = vc;
@@ -387,7 +388,7 @@ export function updateEdgeTimes(world: World) {
       }
     }
     e.cap = capacityDir(e.spec, 0) * SC[e.structure] * junc * friction;
-    st.car = (v[VI.car] + v[NV + VI.car]) * hp;
+    st.car = (v[VI.car] + v[NV + VI.car] + (e.ext?.[0] ?? 0) + (e.ext?.[1] ?? 0)) * hp;
     st.two = (v[VI.two] + v[NV + VI.two]) * hp;
     st.auto = (v[VI.auto] + v[NV + VI.auto]) * hp;
     st.bus = (v[VI.bus] + v[NV + VI.bus]) / 20 / 2;

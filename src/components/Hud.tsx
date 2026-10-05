@@ -203,7 +203,7 @@ export function GameHud() {
         </div>
         <div className="panel group">
           <button className="ov" onClick={() => s.setPanel('mobility')}><Icon n="chart" size={15} /><span>Mobility</span></button>
-          <button className="ov" onClick={() => s.setPanel('city')}><Icon n="city" size={15} /><span>City</span></button>
+          <button className="ov" onClick={() => s.setPanel("city")}><Icon n="city" size={15} /><span>City stats</span></button>
           <button className="ov" onClick={() => s.setPanel('budget')}><Icon n="budget" size={15} /><span>Budget</span></button>
           <button className="ov" onClick={() => s.setPanel('lines')}><Icon n="lines" size={15} /><span>Transit lines</span></button>
           <button className="ov" onClick={() => s.setPanel('help')}><Icon n="help" size={15} /><span>Help</span></button>

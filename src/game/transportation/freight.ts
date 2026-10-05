@@ -91,6 +91,14 @@ export class Freight {
       const share = whDemand / Math.max(1, whs.length);
       push(null, w, share * 0.5 + 1, 'container', 'Regional inbound');
     }
+    // visitors and regional commuters arriving from outside the map by car or taxi
+    for (const b of [...coms, ...inds]) {
+      if (b.jobs < 14) continue;
+      const def = DEFS[b.def];
+      const k = def.cat === 'market' || def.cat === 'landmark' ? 0.45 : def.cat === 'ind' ? 0.12 : 0.22;
+      push(null, b, b.jobs * k * 1.3, 'car', 'Visitors & regional commuters');
+      push(null, b, b.jobs * k * 0.12, 'taxi', 'Visitors & regional commuters');
+    }
     // construction supply
     for (const s of sites) {
       const area = s.w * s.h;
@@ -108,15 +116,18 @@ export class Freight {
     let trips = 0, heavy = 0, n = 0;
     for (const f of this.flows) {
       if (n++ > budget) break;
-      const r = findRoute(world.graph, f.from, f.to, 'heavy') ?? findRoute(world.graph, f.from, f.to, 'car');
+      const light = f.kind === 'car' || f.kind === 'taxi';
+      const r = light ? findRoute(world.graph, f.from, f.to, 'car') : findRoute(world.graph, f.from, f.to, 'heavy') ?? findRoute(world.graph, f.from, f.to, 'car');
       f.route = r;
       if (!r) continue;
-      trips += f.perDay; if (f.heavy) heavy += f.perDay;
+      if (!light) trips += f.perDay;
+      if (f.heavy) heavy += f.perDay;
       for (let i = 0; i < r.edges.length; i++) {
         let a = acc.get(r.edges[i]);
         if (!a) acc.set(r.edges[i], (a = new Float32Array(NV * 2)));
-        a[r.dirs[i] * NV + VI.truck] += f.perDay;
-        a[(1 - r.dirs[i]) * NV + VI.truck] += f.perDay;
+        const vi = light ? VI.car : VI.truck;
+        a[r.dirs[i] * NV + vi] += f.perDay;
+        a[(1 - r.dirs[i]) * NV + vi] += f.perDay;
       }
     }
     for (const e of world.net.edges.values()) {
@@ -124,6 +135,9 @@ export class Freight {
       for (let d = 0; d < 2; d++) {
         const nv = a ? a[d * NV + VI.truck] : 0;
         e.vol![d * NV + VI.truck] = e.vol![d * NV + VI.truck] * 0.4 + nv * 0.6;
+        const nc = a ? a[d * NV + VI.car] : 0;
+        e.ext = e.ext ?? [0, 0];
+        e.ext[d] = (e.ext[d] ?? 0) * 0.4 + nc * 0.6;
       }
       // road wear grows with heavy daily traffic
       const wear = (e.vol![VI.truck] + e.vol![NV + VI.truck]) / Math.max(1, e.cap! / 4);

@@ -82,6 +82,8 @@ export class ToolController {
 
   cancel() {
     const s = this.store;
+    if (s.tool === 'select' && s.dock !== 'none') { s.dock = 'none'; s.emit(); return; }
+    if (s.tool === 'select' && !s.selection && s.panel !== 'none') { s.panel = 'none'; s.emit(); return; }
     if (s.tool === 'road') {
       if (s.roadDraft.pending) { s.roadDraft.pending = false; s.emit(); return; }
       if (s.roadDraft.pts.length > 0) { s.roadDraft = { pts: [], plan: null, pending: false, path: [] }; this.view.preview.clear(); s.emit(); return; }

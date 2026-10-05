@@ -14,6 +14,7 @@ npm run dev          # http://localhost:5173
 npm run build        # type-check + production build
 npm run sim:test     # headless simulation smoke test (no browser needed)
 npx tsx scripts/autoplay.ts Kaveri-2026 medium rolling 40   # scripted "player" for balance checks
+npx tsx scripts/fuzz.ts 3                                   # random-action fuzz test of the command layer
 ```
 
 ## Playing

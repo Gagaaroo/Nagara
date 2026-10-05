@@ -158,8 +158,22 @@ export class Simulation {
     updateVendors(w);
   }
 
+  private advise() {
+    const w = this.world, st = w.stats;
+    if (st.unserved > 25) w.warnOnce('unserved', 25, `${st.unserved} people live or work without power or water — see the Power and Water lenses`);
+    if (st.congestion > 0.3) {
+      let worst: { n: string; v: number } | null = null;
+      for (const e of w.net.edges.values()) { const v = Math.max(e.flowVc?.[0] ?? 0, e.flowVc?.[1] ?? 0); if (!worst || v > worst.v) worst = { n: e.spec.name, v }; }
+      if (worst && worst.v > 1) w.warnOnce('jam', 20, `Heavy congestion on a ${worst.n}. Inspect it, add lanes or a bus lane, or build transit`);
+    }
+    if (st.workers > 40 && st.employed / Math.max(1, st.workers) < 0.7) w.warnOnce('jobs', 30, 'Many residents have no job. Zone more commercial, industrial or office land');
+    if (st.unreachable > 10) w.warnOnce('unreach', 20, 'Some trips have no road connection. Check one-way streets and gaps');
+    if (st.floodedTiles > 12) w.warnOnce('flood', 15, 'Flooded streets are slowing traffic. Add covered drains or a stormwater pond', 'bad');
+  }
+
   private onDay() {
     const w = this.world;
+    this.advise();
     constructionStep(w, 1);
     occupancyStep(w);
     recount(w);

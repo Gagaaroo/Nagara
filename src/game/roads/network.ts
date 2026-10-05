@@ -93,6 +93,11 @@ export class RoadNetwork {
     this.touch(true);
   }
 
+  /** Remove junctions that no longer connect any road. */
+  pruneOrphans() {
+    for (const [id, n] of this.nodes) if (n.edges.length === 0) this.nodes.delete(id);
+  }
+
   other(e: RoadEdge, nodeId: ID): ID { return e.a === nodeId ? e.b : e.a; }
 
   /** z (m) along an edge at distance s. */

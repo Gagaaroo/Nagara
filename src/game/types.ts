@@ -141,6 +141,7 @@ export interface RoadEdge {
   lanes?: Vehicle[][];
   heading?: number;
   stat?: EdgeStat;
+  ext?: [number, number]; // daily external (regional) car trips per direction
 }
 
 export interface EdgeStat {

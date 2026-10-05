@@ -4,7 +4,7 @@ import { ZONE_INFO } from '../data/buildings';
 import { clamp, sat } from '../utils/math';
 
 export type OverlayKey =
-  | 'none' | 'traffic' | 'speed' | 'popden' | 'jobden' | 'landvalue' | 'pollution' | 'noise' | 'pt' | 'walk' | 'bike' | 'freight' | 'ped'
+  | 'none' | 'traffic' | 'speed' | 'popden' | 'jobden' | 'landvalue' | 'pollution' | 'noise' | 'pt' | 'auto' | 'walk' | 'bike' | 'freight' | 'ped'
   | 'buildable' | 'elevation' | 'slope' | 'zones' | 'power' | 'water' | 'lastmile' | 'flood';
 
 export interface OverlayDef { key: OverlayKey; label: string; group: 'Mobility' | 'City' | 'Terrain' | 'Utilities'; low: string; high: string; stops: string[]; roads?: boolean; hint: string }
@@ -15,6 +15,7 @@ export const OVERLAYS: OverlayDef[] = [
   { key: 'ped', label: 'Pedestrian activity', group: 'Mobility', low: 'Quiet', high: 'Busy', stops: ['#3a4d5c', '#4a9fb5', '#e9c24a', '#e8743b'], roads: true, hint: 'Footfall on each street' },
   { key: 'freight', label: 'Freight flow', group: 'Mobility', low: 'Light', high: 'Heavy', stops: ['#4a5560', '#c2a24a', '#e07a3a', '#c4382f'], roads: true, hint: 'Truck volume per street' },
   { key: 'pt', label: 'Public transport coverage', group: 'Mobility', low: 'None', high: 'Frequent', stops: ['#2b4a52', '#2fa89a', '#7fd6c2'], hint: 'Walking catchment of stops, weighted by frequency' },
+  { key: 'auto', label: 'Auto-rickshaw demand', group: 'Mobility', low: 'Low', high: 'Unserved', stops: ['#3a4d3c', '#b9c24a', '#f2c230', '#e8743b'], hint: 'Demand around stations, markets, schools; stands calm it' },
   { key: 'walk', label: 'Walking accessibility', group: 'Mobility', low: 'Poor', high: 'Excellent', stops: ['#c4382f', '#e9c24a', '#4fae6a'], hint: 'Footpaths, amenities, slope' },
   { key: 'bike', label: 'Cycling accessibility', group: 'Mobility', low: 'Poor', high: 'Excellent', stops: ['#c4382f', '#e9c24a', '#4fae6a'], hint: 'Cycle lanes, terrain, safety' },
   { key: 'lastmile', label: 'Last-mile access', group: 'Mobility', low: 'Cut off', high: 'Connected', stops: ['#c4382f', '#e9c24a', '#4fae6a'], hint: 'Time to reach a transit node by walk, cycle or auto' },
@@ -73,6 +74,7 @@ export function fillOverlay(world: World, key: OverlayKey, data: Uint8ClampedArr
     case 'pollution': field(F.air, 1.7, 0.03); break;
     case 'noise': field(F.noise, 1.7, 0.03); break;
     case 'pt': field(F.pt, 1, 0.03, 175); break;
+    case 'auto': for (let k = 0; k < n * n; k++) { const v = F.autoDen[k] * (1 - F.standCov[k] * 0.85); if (v > 0.04) put(k, ramp(def.stops, v * 1.3), 175); } break;
     case 'walk': for (let k = 0; k < n * n; k++) if (!t.waterKind[k] && (F.frontage[k] > 0 || F.popDen[k] > 0.05)) put(k, ramp(def.stops, F.walk[k]), 170); break;
     case 'bike': for (let k = 0; k < n * n; k++) if (!t.waterKind[k] && (F.frontage[k] > 0 || F.popDen[k] > 0.05)) put(k, ramp(def.stops, F.bike[k]), 170); break;
     case 'lastmile': for (let k = 0; k < n * n; k++) if (!t.waterKind[k] && (F.popDen[k] > 0.05 || F.jobDen[k] > 0.05)) put(k, ramp(def.stops, F.lastMile[k]), 185); break;

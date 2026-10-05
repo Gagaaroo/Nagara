@@ -204,6 +204,7 @@ export class GameView {
       const k = e.key.toLowerCase();
       if (['w', 'a', 's', 'd', 'q', 'e', 'r', 'f', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(k)) { this.rig.keys.add(k); if (k.startsWith('arrow')) e.preventDefault(); }
       else if (k === 'escape') this.tools.cancel();
+      else if (k === '`') { this.store.debug = !this.store.debug; this.store.emit(); }
       else if (k === 'enter') this.tools.confirm();
       else if (k === ' ') { e.preventDefault(); const s = this.store.sim; if (s) { s.setSpeed(s.speedIndex === 0 ? 1 : 0); this.store.emit(); } }
       else if (k === '1' || k === '2' || k === '3') { this.store.sim?.setSpeed(Number(k)); this.store.emit(); }

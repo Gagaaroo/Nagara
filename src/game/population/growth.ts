@@ -324,6 +324,8 @@ export function fillHome(world: World, b: Building, residents: number) {
   let cur = 0, guard = 0;
   while (cur < residents && guard++ < 200) {
     const h = newHousehold(world, b);
+    const left = residents - cur;
+    if (h.members > left) { h.members = Math.max(1, left); h.earners = Math.min(h.earners, h.members); h.students = Math.min(h.students, h.members - h.earners); }
     world.addCitizen(h);
     cur += h.members;
   }
