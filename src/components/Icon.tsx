@@ -1,0 +1,62 @@
+/** Minimal stroke icon set (24×24). Original line icons, no third-party assets. */
+const P: Record<string, string> = {
+  road: 'M8 3 5 21M16 3l3 18M12 4v3M12 10v4M12 17v3',
+  zone: 'M4 4h7v7H4zM13 4h7v4h-7zM13 11h7v9h-7zM4 14h7v6H4z',
+  bus: 'M5 4h14a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1zM4 11h16M7 20v-3M17 20v-3M8 14h.01M16 14h.01',
+  metro: 'M7 3h10a2 2 0 0 1 2 2v9a3 3 0 0 1-3 3H8a3 3 0 0 1-3-3V5a2 2 0 0 1 2-2zM5 10h14M8 21l2-4M16 21l-2-4M9 13.5h.01M15 13.5h.01',
+  rail: 'M6 3h12v12H6zM6 9h12M9 19l-2 2M15 19l2 2M9 12.5h.01M15 12.5h.01M3 21h18',
+  service: 'M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6zM12 8v6M9 11h6',
+  utility: 'M13 2 5 13h6l-1 9 8-11h-6z',
+  park: 'M12 21v-7M12 14a5 5 0 0 1-4-8 5 5 0 0 1 8 0 5 5 0 0 1-4 8zM6 21h12',
+  market: 'M4 9l1-5h14l1 5M4 9a3 3 0 0 0 5 2 3 3 0 0 0 6 0 3 3 0 0 0 5-2M5 12v8h14v-8M10 20v-5h4v5',
+  select: 'M5 3l13 8-6 1.5L9 19z',
+  bulldoze: 'M4 20h16M6 20v-5l3-6h6l3 6v5M10 9V5M14 9V5',
+  upgrade: 'M12 20V6M6 12l6-6 6 6M5 20h14',
+  pause: 'M8 5v14M16 5v14',
+  play: 'M7 5l12 7-12 7z',
+  ff: 'M4 5l8 7-8 7zM12 5l8 7-8 7z',
+  fff: 'M3 5l6 7-6 7zM9 5l6 7-6 7zM15 5l6 7-6 7z',
+  pop: 'M9 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM3 20c0-3.5 2.7-6 6-6s6 2.5 6 6M17 10a2.5 2.5 0 1 0 0-5M17 14c2.5 0 4 2 4 5',
+  money: 'M12 3v18M16 7c-1-1.5-2.5-2-4-2-2.5 0-4 1.3-4 3s1.5 2.5 4 3 4 1.3 4 3-1.5 3-4 3c-1.7 0-3.2-.6-4-2',
+  smile: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM8.5 14.5c1 1.3 2.2 2 3.5 2s2.5-.7 3.5-2M9 9.5h.01M15 9.5h.01',
+  traffic: 'M8 3h8v18H8zM12 7h.01M12 12h.01M12 17h.01',
+  sun: 'M12 16a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5 19 19M5 19l1.5-1.5M17.5 6.5 19 5',
+  cloud: 'M7 18a4 4 0 0 1-.5-8A6 6 0 0 1 18 11a3.5 3.5 0 0 1-.5 7z',
+  rain: 'M7 14a4 4 0 0 1-.5-8A6 6 0 0 1 18 7a3.5 3.5 0 0 1-.5 7zM8 17l-1 3M12 17l-1 3M16 17l-1 3',
+  heavy: 'M7 13a4 4 0 0 1-.5-8A6 6 0 0 1 18 6a3.5 3.5 0 0 1-.5 7zM7 16l-1.5 4M11 16l-1.5 4M15 16l-1.5 4M19 16l-1.5 4',
+  chart: 'M4 20V4M4 20h16M8 16v-5M12 16V8M16 16v-8',
+  city: 'M4 21V9l5-3v15M9 21V4l6 2v15M15 21v-9l5 2v7M6.5 12h.01M12 9h.01M12 13h.01',
+  budget: 'M4 6h16v12H4zM4 10h16M8 15h3',
+  map: 'M9 4 3 6v14l6-2 6 2 6-2V4l-6 2zM9 4v14M15 6v14',
+  layers: 'M12 3 3 8l9 5 9-5zM3 13l9 5 9-5M3 17.5l9 5 9-5',
+  lines: 'M5 5a2 2 0 1 0 0 .01M19 19a2 2 0 1 0 0 .01M5 7v4a4 4 0 0 0 4 4h6a4 4 0 0 1 4 4',
+  help: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 .9-1 1.7M12 17h.01',
+  save: 'M5 4h11l3 3v13H5zM8 4v5h7V4M8 20v-6h8v6',
+  bug: 'M9 7a3 3 0 0 1 6 0M6 12h12M12 9v12M7 9l-3-2M17 9l3-2M7 15l-3 2M17 15l3 2M8 12a4 4 0 0 0 8 0',
+  close: 'M6 6l12 12M18 6 6 18',
+  plus: 'M12 5v14M5 12h14',
+  minus: 'M5 12h14',
+  rotl: 'M4 12a8 8 0 1 0 3-6.2M4 4v5h5',
+  rotr: 'M20 12a8 8 0 1 1-3-6.2M20 4v5h-5',
+  tiltu: 'M5 16l7-9 7 9M5 20h14',
+  tiltd: 'M5 8l7 9 7-9M5 4h14',
+  pin: 'M12 21s6-5.5 6-11a6 6 0 0 0-12 0c0 5.5 6 11 6 11zM12 12a2 2 0 1 0 0-4 2 2 0 0 0 0 4z',
+  trash: 'M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13',
+  check: 'M5 12.5l4.5 4.5L19 7.5',
+  walk: 'M13 5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3zM10 21l2-6-2-2 1-5 4 3 3 1M8 12l3-4',
+  freight: 'M2 7h12v9H2zM14 10h4l3 3v3h-7zM6 19a2 2 0 1 0 0 .01M17 19a2 2 0 1 0 0 .01',
+  terrain: 'M3 19 9 7l4 7 3-4 5 9z',
+  transit: 'M4 12h4l2-6 4 12 2-6h4',
+  tool: 'M14 7l3-3 3 3-3 3zM3 21l9-9M7 17l-3-1 1 3',
+  arrow: 'M5 12h14M13 6l6 6-6 6',
+  curve: 'M4 19C4 8 12 4 20 5',
+  line: 'M4 19 20 5',
+};
+
+export function Icon({ n, size = 18, stroke = 1.7 }: { n: string; size?: number; stroke?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={stroke} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d={P[n] ?? P.help} />
+    </svg>
+  );
+}
