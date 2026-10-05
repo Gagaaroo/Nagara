@@ -150,7 +150,7 @@ export function createWorld(params: MapParams, terrainOverride?: Terrain): World
   // 4) utilities & a depot (placed instantly, funded by the "city")
   const place = (key: string, u: number, v: number, opts: { roadNear?: boolean } = {}) => {
     const [x, y] = P(u, v);
-    const sp = findSpot(world, key, x, y, 0, 9, opts);
+    const sp = findSpot(world, key, x, y, 0, 9, opts) ?? findSpot(world, key, x, y, 9, 26, opts) ?? findSpot(world, key, cx, cy, 6, 30, {});
     if (!sp) return null;
     return world.placeBuilding(DEFS[key], sp.x, sp.y, 0, { free: true, instant: true, wealth: 1 });
   };

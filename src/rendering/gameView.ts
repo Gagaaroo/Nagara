@@ -67,7 +67,7 @@ export class GameView {
   constructor(public container: HTMLElement, public store: Store) {
     const world = store.world!;
     this.world = world;
-    this.renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance', preserveDrawingBuffer: true });
+    this.renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance', preserveDrawingBuffer: false });
     const urlScale = Number(new URLSearchParams(location.search).get('scale'));
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2) * (urlScale > 0 ? urlScale : store.settings.renderScale));
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;

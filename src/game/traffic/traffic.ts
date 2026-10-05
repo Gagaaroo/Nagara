@@ -72,16 +72,16 @@ export class Traffic {
   reset() { this.vehicles = []; this.peds = []; this.trains = []; this.boxes.clear(); }
 
   /** Advance the visual traffic. `dt` is physical seconds, `m` is the game speed multiplier. */
-  step(world: World, dt: number, m: number) {
+  step(world: World, dt: number, m: number, dtReal = dt) {
     this.frame++;
     this.time += dt;
     this.ensurePlans(world);
     this.purge(world);
-    this.spawnPassenger(world, dt, m, Math.min(3, m));
-    this.spawnFreight(world, dt, m);
+    this.spawnPassenger(world, dtReal, m, Math.min(3, m));
+    this.spawnFreight(world, dtReal, m);
     this.spawnBuses(world);
-    this.spawnPeds(world, dt, m);
-    this.spawnEmergency(world, dt, m);
+    this.spawnPeds(world, dtReal, m);
+    this.spawnEmergency(world, dtReal, m);
     this.collectApproaches(world);
     this.moveVehicles(world, dt);
     this.moveBoxes(world, dt);

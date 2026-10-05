@@ -353,28 +353,28 @@ function pickStart(t: Terrain, rng: () => number) {
     }
   }
   let best = { x: n / 2, y: n / 2, score: -1e9 };
-  for (let y = R + 6; y < n - R - 6; y += 3)
-    for (let x = R + 6; x < n - R - 6; x += 3) {
-      let ok = 0, tot = 0, sl = 0;
-      for (let j = -R; j <= R; j += 2)
-        for (let i = -R; i <= R; i += 2) {
-          const k = (y + j) * n + x + i;
-          tot++;
-          if (t.build[k] === Build.Ok) ok++;
-          sl += t.slope[k];
-        }
-      const flat = ok / tot;
-      if (flat < 0.85) continue;
-      const wd = wdist[y * n + x];
-      const waterScore = wd < 5 ? -3 : wd < 30 ? 1.2 - Math.abs(wd - 12) / 20 : 0;
-      const centre = Math.hypot(x - n / 2, y - n / 2) / n;
-      const score = flat * 4 - sl / tot * 12 + waterScore - centre * 3 + rng() * 0.4;
-      if (score > best.score) best = { x, y, score };
-    }
-  if (best.score < -1e8) {
-    // fall back: flattest area anywhere
-    let bs = 1e9;
-    for (let y = R; y < n - R; y += 3) for (let x = R; x < n - R; x += 3) { const s = t.slope[y * n + x] + (t.waterKind[y * n + x] ? 9 : 0); if (s < bs) { bs = s; best = { x, y, score: 0 }; } }
+  const M = Math.min(24, Math.floor(n * 0.22));
+  // relax the flatness requirement step by step until a site is found
+  for (const minFlat of [0.85, 0.7, 0.55, 0.4, 0.2]) {
+    for (let y = M; y < n - M; y += 3)
+      for (let x = M; x < n - M; x += 3) {
+        let ok = 0, tot = 0, sl = 0;
+        for (let j = -R; j <= R; j += 2)
+          for (let i = -R; i <= R; i += 2) {
+            const k = (y + j) * n + x + i;
+            tot++;
+            if (t.build[k] === Build.Ok) ok++;
+            sl += t.slope[k];
+          }
+        const flat = ok / tot;
+        if (flat < minFlat) continue;
+        const wd = wdist[y * n + x];
+        const waterScore = wd < 5 ? -3 : wd < 30 ? 1.2 - Math.abs(wd - 12) / 20 : 0;
+        const centre = Math.hypot(x - n / 2, y - n / 2) / n;
+        const score = flat * 4 - sl / tot * 12 + waterScore - centre * 3 + rng() * 0.4;
+        if (score > best.score) best = { x, y, score };
+      }
+    if (best.score > -1e8) break;
   }
   return { x: best.x, y: best.y };
 }

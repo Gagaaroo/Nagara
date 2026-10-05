@@ -63,7 +63,7 @@ export class Simulation {
       // physical traffic time is capped so vehicles never tunnel at high speed
       const phys = realDt * Math.min(m, 3);
       const sub = Math.ceil(phys / 0.05);
-      for (let i = 0; i < sub; i++) this.traffic.step(w, phys / sub, m * (1 / sub) * (sub === 0 ? 1 : 1) * 1);
+      for (let i = 0; i < sub; i++) this.traffic.step(w, phys / sub, m, realDt / sub);
       weatherTick(w, realDt * Math.min(m, 4));
       // clock
       w.minute += realDt * m * GAME_MIN_PER_SEC;
