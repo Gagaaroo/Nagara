@@ -226,6 +226,11 @@ export class World {
   }
 
   /** Cost of placing a building including terrain preparation. */
+  /** True if a drivable ground road passes within ~4 tiles of this point. */
+  hasRoadAccess(x: number, y: number, r = 4): boolean {
+    return !!this.net.nearestEdge(x, y, r, (e) => (e.structure === 'ground' || e.structure === 'depressed') && e.spec.category !== 'highway');
+  }
+
   placeCost(def: BuildingDef, x: number, y: number, rot: number): number {
     const w = rot % 2 ? def.h : def.w, h = rot % 2 ? def.w : def.h;
     let f = 0, c = 0;
@@ -354,7 +359,7 @@ export class World {
     if (this.zoneCache.key === key) return this.zoneCache.list;
     const list: number[] = [];
     const n = this.n;
-    for (let k = 0; k < n * n; k++) if (this.zones[k] && !this.buildGrid[k] && this.fields.frontage[k] >= 0.25) list.push(k);
+    for (let k = 0; k < n * n; k++) if (this.zones[k] && !this.buildGrid[k]) list.push(k);
     this.zoneCache = { key, list };
     return list;
   }

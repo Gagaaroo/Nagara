@@ -366,7 +366,7 @@ export class RoadView {
         mb.tri([n.x, y + dy, n.y], [n.x + Math.cos(a1) * r, y + dy, n.y + Math.sin(a1) * r], [n.x + Math.cos(a0) * r, y + dy, n.y + Math.sin(a0) * r], color, shade);
       }
     };
-    if (n.edges.length >= 3 || roundabout) disc(Rr, 0.0006, surf);
+    if (n.edges.length >= 3 || roundabout) { disc(Rr + 0.17, -0.0004, 0xc9c6bc); disc(Rr + 0.02, 0.0006, surf); }
     if (roundabout) {
       disc(Rr * 0.5 + 0.03, 0.02, 0xb9b6ac);
       disc(Rr * 0.5, 0.024, 0x5f9a52);

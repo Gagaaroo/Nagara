@@ -13,9 +13,9 @@ import { RoadView } from '../rendering/roadView';
 import { draftLine, lineBuildCost } from '../game/transportation/transit';
 
 export type Screen = 'menu' | 'newcity' | 'game' | 'load' | 'settings' | 'about';
-export type ToolId = 'select' | 'road' | 'bulldoze' | 'upgrade' | 'zone' | 'building' | 'busstop' | 'linepick';
+export type ToolId = 'select' | 'road' | 'bulldoze' | 'upgrade' | 'zone' | 'building' | 'busstop' | 'linepick' | 'layout';
 export type ViewMode = 'city' | 'transport' | 'terrain' | 'transit';
-export type Dock = 'none' | 'roads' | 'zones' | 'transit' | 'services' | 'utilities' | 'parks' | 'buildings';
+export type Dock = 'none' | 'roads' | 'layouts' | 'zones' | 'transit' | 'services' | 'utilities' | 'parks' | 'buildings';
 export type Panel = 'none' | 'mobility' | 'city' | 'budget' | 'lines' | 'help' | 'save' | 'overlays' | 'debug' | 'design';
 export type Selection = { kind: 'edge' | 'node' | 'building' | 'stop' | 'line' | 'tile'; id: number; x?: number; y?: number } | null;
 
@@ -30,7 +30,7 @@ export interface RoadDraft { pts: [number, number][]; plan: RoadPlan | null; pen
 const SETTINGS_KEY = 'nagara.settings.v1';
 const TEMPLATE_KEY = 'nagara.templates.v1';
 
-const defaultSettings = (): Settings => ({ renderScale: 1, vehicleCap: 'medium', autosave: true, confirmRoads: true, hints: true, shadowsLite: false });
+const defaultSettings = (): Settings => ({ renderScale: 1, vehicleCap: 'medium', autosave: true, confirmRoads: false, hints: true, shadowsLite: false });
 
 export const defaultParams = (): MapParams => ({
   seed: 'Kaveri-2026', size: 'medium', terrain: 'rolling', region: 'south', water: 0.5, mountains: 0.35, forest: 0.5, resources: 'standard', difficulty: 'standard', sandbox: false,
@@ -64,6 +64,7 @@ class Store {
   templates: RoadSpec[] = (() => { try { return JSON.parse(localStorage.getItem(TEMPLATE_KEY) ?? '[]'); } catch { return []; } })();
   roadDraft: RoadDraft = { pts: [], plan: null, pending: false, path: [] };
   zone: Zone = Zone.ResLow;
+  layoutKey: string | null = null;
   buildKey: string | null = null;
   buildRot = 0;
   buildIssue: string | null = null;
@@ -80,6 +81,10 @@ class Store {
   designMode = false;
   saveNote = '';
   intro = true;
+  checklistOpen = true;
+  baseline = { edges: 0, zoned: 0, buildings: 0 };
+  lensesOpen = false;
+  advRoad = false;
   view: import('../rendering/gameView').GameView | null = null;
   fps = 0;
 
@@ -132,7 +137,7 @@ class Store {
     this.screen = 'game';
     this.tool = 'select'; this.dock = 'none'; this.panel = 'none'; this.selection = null; this.overlay = 'none'; this.viewMode = 'city';
     this.roadDraft = { pts: [], plan: null, pending: false, path: [] };
-    this.transitDraft = null; this.designMode = false; this.toastSeen = world.msgSeq; this.intro = this.settings.hints && world.day < 1;
+    this.transitDraft = null; this.designMode = false; this.toastSeen = world.msgSeq; this.intro = false; this.checklistOpen = this.settings.hints && world.day < 3; this.baseline = { edges: world.net.edges.size, zoned: world.zones.reduce((a, v) => a + (v ? 1 : 0), 0), buildings: world.buildings.size };
     this.emit();
   }
 
@@ -192,6 +197,7 @@ class Store {
   }
   chooseTemplate(t: RoadSpec) { this.roadSpec = cloneSpec(t); this.roadPreset = t.name; this.dock = 'none'; this.setTool('road'); }
   chooseBuilding(key: string) { this.buildKey = key; this.buildRot = 0; this.tool = 'building'; this.dock = 'none'; this.buildIssue = null; this.emit(); }
+  chooseLayout(key: string) { this.layoutKey = key; this.buildRot = 0; this.tool = 'layout'; this.dock = 'none'; this.emit(); }
   chooseZone(z: Zone) { this.zone = z; this.tool = 'zone'; this.dock = 'none'; this.overlay = 'zones'; this.emit(); }
   select(sel: Selection) { this.selection = sel; this.emit(); }
   setOverlay(o: OverlayKey) { this.overlay = this.overlay === o ? 'none' : o; this.emit(); }

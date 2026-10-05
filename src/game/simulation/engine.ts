@@ -35,6 +35,7 @@ export class Simulation {
   private jobTimer = 0;
   private freightTimer = 0;
   private statTimer = 0;
+  private growTimer = 0;
   autosave: ((w: World) => void) | null = null;
   debug = { simMs: 0, fps: 0, jobMs: {} as Record<string, number> };
 
@@ -65,6 +66,10 @@ export class Simulation {
       const sub = Math.ceil(phys / 0.05);
       for (let i = 0; i < sub; i++) this.traffic.step(w, phys / sub, m, realDt / sub);
       weatherTick(w, realDt * Math.min(m, 4));
+      // growth and construction run on real time so zoning shows results within seconds
+      this.growTimer += realDt * Math.min(m, 4);
+      if (this.growTimer > 1.1) { this.growTimer = 0; growthStep(w); occupancyStep(w, false); recount(w); if (w.assignDirty) assignDestinations(w); }
+      constructionStep(w, realDt * Math.min(m, 4) * 0.9);
       // clock
       w.minute += realDt * m * GAME_MIN_PER_SEC;
       while (w.minute >= 1440) { w.minute -= 1440; w.day += 1; }
@@ -153,7 +158,6 @@ export class Simulation {
     const w = this.world;
     weatherHour(w);
     floodStep(w, 1);
-    growthStep(w);
     if (w.assignDirty || Math.floor(w.hour) % 3 === 0) { assignDestinations(w); }
     updateVendors(w);
   }
@@ -174,7 +178,6 @@ export class Simulation {
   private onDay() {
     const w = this.world;
     this.advise();
-    constructionStep(w, 1);
     occupancyStep(w);
     recount(w);
     dailyEconomy(w);

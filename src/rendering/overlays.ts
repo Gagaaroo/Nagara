@@ -104,7 +104,7 @@ export function fillOverlay(world: World, key: OverlayKey, data: Uint8ClampedArr
       break;
     }
     case 'zones':
-      for (let k = 0; k < n * n; k++) { const z = world.zones[k] as Zone; if (!z) continue; const col = ZONE_INFO[z]?.color ?? 0x888888; put(k, [(col >> 16) & 255, (col >> 8) & 255, col & 255], world.buildGrid[k] ? 110 : 170); }
+      for (let k = 0; k < n * n; k++) { const z = world.zones[k] as Zone; if (!z) { if (!t.waterKind[k] && !world.buildGrid[k] && (t.build[k] === Build.No || t.protectedLand[k])) put(k, [200, 70, 62], 120); continue; } const col = ZONE_INFO[z]?.color ?? 0x888888; put(k, [(col >> 16) & 255, (col >> 8) & 255, col & 255], world.buildGrid[k] ? 110 : 170); }
       break;
     default: return false;
   }

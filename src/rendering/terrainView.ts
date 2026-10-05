@@ -93,7 +93,7 @@ export class TerrainView {
       const wl = t.waterLevel[k];
       const under = wl > NO_WATER / 2 && h < wl;
       const base = palette[(hash2(i >> 2, j >> 2) * 3) | 0];
-      let col3 = mix(base, 0x4f7f45, fo * 0.55 + prot * 0.15);
+      let col3 = mix(base, 0x5f9150, fo * 0.3 + prot * 0.1);
       const jitter = (hash2(i, j) - 0.5) * 0.05;
       if (dry > 0) col3 = mixRgb(col3, mix(0xb6a468, 0xb6a468, 0), dry * (1 - fo));
       if (sl > 0.1) col3 = mixRgb(col3, mix(0x8d877b, 0x8d877b, 0), smoothstep(0.1, 0.28, sl));
@@ -146,9 +146,9 @@ export class TerrainView {
     for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) {
       const k = j * n + i;
       const f = t.forest[k];
-      if (f < 45 || t.waterKind[k] || w.buildGrid[k]) continue;
+      if (f < 110 || t.waterKind[k] || w.buildGrid[k]) continue;
       if (w.net.isRoadTile(i, j)) continue;
-      const count = f > 200 ? 3 : f > 120 ? 2 : 1;
+      const count = f > 200 ? 2 : 1;
       for (let c = 0; c < count; c++) {
         const hx = hash2(i * 7 + c, j * 13), hy = hash2(i * 11, j * 5 + c * 3), hr = hash2(i + c * 17, j * 3);
         const x = i + 0.15 + hx * 0.7, y = j + 0.15 + hy * 0.7;

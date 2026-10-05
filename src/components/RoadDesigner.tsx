@@ -138,6 +138,8 @@ export function RoadDesigner() {
       <div className="field"><label>Speed limit <span className="val">{spec.speed} km/h</span></label>
         <input type="range" min={10} max={120} step={5} value={spec.speed} onChange={(e) => patch({ speed: +e.target.value })} />
         {spec.speed >= 80 && lockOpt(10000) && <span className="lockline">Above 70 km/h unlocks at 10,000 citizens</span>}</div>
+      <button className="btn sm" style={{ marginBottom: 10 }} onClick={() => { s.advRoad = !s.advRoad; s.emit(); }}>{s.advRoad ? '▾ Hide extra options' : '▸ More options (median, footpath, cycle lane, bus lane…)'}</button>
+      {s.advRoad && <>
       <Select label="Median" value={spec.median} options={OPTIONS.median} onChange={(v) => patch({ median: v })} lockFn={(v) => v !== 'none' && v !== 'painted' && lockOpt(800)} />
       <Select label="Footpath" value={spec.sidewalk} options={OPTIONS.sidewalk} onChange={(v) => patch({ sidewalk: v })} />
       <Select label="Bicycle infrastructure" value={spec.bike} options={OPTIONS.bike as readonly RoadSpec['bike'][]} onChange={(v) => patch({ bike: v })} lockFn={(v) => (v === 'protected' || v === 'track') && lockOpt(1200)} />
@@ -150,6 +152,7 @@ export function RoadDesigner() {
       <Select label="Surface" value={spec.surface} options={OPTIONS.surface} onChange={(v) => patch({ surface: v })} />
       <Select label="Drainage" value={spec.drain} options={OPTIONS.drain} onChange={(v) => patch({ drain: v })} lockFn={(v) => v === 'storm' && lockOpt(5000)} />
       <Select label="Heavy vehicles" value={spec.trucks} options={OPTIONS.trucks} onChange={(v) => patch({ trucks: v })} lockFn={(v) => v === 'priority' && lockOpt(8000)} />
+      </>}
 
       <div className="card" style={{ marginTop: 6 }}>
         <div className="rowline"><span>Capacity</span><span>{Math.round(cap)} PCU/h per direction</span></div>

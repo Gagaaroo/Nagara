@@ -194,6 +194,25 @@ export class PreviewView {
   group = new THREE.Group();
   meshes: THREE.Object3D[] = [];
   constructor(public world: World, scene: THREE.Scene) { scene.add(this.group); }
+  private gridLines: THREE.LineSegments | null = null;
+  private gridKey = '';
+  /** Faint tile grid around the cursor so the land and tile size are easy to read. */
+  setGrid(p: { x: number; y: number } | null) {
+    if (!p) { if (this.gridLines) { this.group.remove(this.gridLines); this.gridLines.geometry.dispose(); this.gridLines = null; this.gridKey = ''; } return; }
+    const cx = Math.floor(p.x), cy = Math.floor(p.y), key = cx + ',' + cy;
+    if (key === this.gridKey) return;
+    this.gridKey = key;
+    const t = this.world.terrain, R = 11, V = t.n + 1;
+    const pos: number[] = [];
+    const h = (x: number, y: number) => t.heights[Math.min(t.n, Math.max(0, y)) * V + Math.min(t.n, Math.max(0, x))] * HS + 0.05;
+    for (let y = cy - R; y <= cy + R; y++) for (let x = cx - R; x < cx + R; x++) if (y >= 0 && y <= t.n && x >= 0 && x < t.n) pos.push(x, h(x, y), y, x + 1, h(x + 1, y), y);
+    for (let x = cx - R; x <= cx + R; x++) for (let y = cy - R; y < cy + R; y++) if (x >= 0 && x <= t.n && y >= 0 && y < t.n) pos.push(x, h(x, y), y, x, h(x, y + 1), y + 1);
+    if (this.gridLines) { this.group.remove(this.gridLines); this.gridLines.geometry.dispose(); }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+    this.gridLines = new THREE.LineSegments(g, new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.22, depthWrite: false }));
+    this.gridLines.frustumCulled = false; this.gridLines.renderOrder = 8;
+    this.group.add(this.gridLines);
+  }
   clear() { for (const m of this.meshes) { this.group.remove(m); (m as THREE.Mesh).geometry?.dispose(); } this.meshes = []; }
   private add(o: THREE.Object3D) { this.group.add(o); this.meshes.push(o); }
 
@@ -211,7 +230,7 @@ export class PreviewView {
     const jb = new MeshBuilder();
     for (const j of plan.junctions) {
       const y = heightAt(this.world.terrain, j.x, j.y) * HS + 0.1;
-      jb.cylinder(j.x, y, j.y, 0.12, 0.05, j.kind === 'cross' ? 0xf2b24a : j.kind === 'existing' ? 0xffffff : 0x9bd0ff, 10);
+      jb.cylinder(j.x, y, j.y, 0.12, 0.05, j.kind === 'cross' ? 0x4cd964 : j.kind === 'existing' ? 0x4cd964 : 0x9bd0ff, 10);
     }
     if (jb.vertexCount) { const m = new THREE.Mesh(jb.build(), new THREE.MeshBasicMaterial({ vertexColors: true, depthTest: false })); m.renderOrder = 10; m.frustumCulled = false; this.add(m); }
     // demolition markers
@@ -272,6 +291,22 @@ export class PreviewView {
       l.renderOrder = 10; l.frustumCulled = false;
       this.add(l);
     }
+  }
+
+  layout(items: { key: string; x: number; y: number; w: number; h: number }[], ok: boolean[]) {
+    this.clear();
+    const t = this.world.terrain, V = t.n + 1;
+    const mb = new MeshBuilder();
+    items.forEach((it, i) => {
+      let top = -1e9;
+      for (let j = 0; j <= it.h; j++) for (let k = 0; k <= it.w; k++) top = Math.max(top, t.heights[Math.min(t.n, Math.max(0, it.y + j)) * V + Math.min(t.n, Math.max(0, it.x + k))] ?? 0);
+      const def = DEFS[it.key];
+      const bh = def.cat === 'park' || def.key === 'auto_stand' ? 0.05 : Math.min(0.9, Math.max(0.15, def.maxLevels * 0.07));
+      mb.box(it.x + it.w / 2, top * HS, it.y + it.h / 2, it.w * 0.92, bh, it.h * 0.92, ok[i] ? 0x7be08f : 0xe04a3f, {});
+    });
+    const m = new THREE.Mesh(mb.build(), new THREE.MeshBasicMaterial({ vertexColors: true, transparent: true, opacity: 0.55, depthTest: false }));
+    m.renderOrder = 9; m.frustumCulled = false;
+    this.add(m);
   }
 
   marker(x: number, y: number, color: number) {

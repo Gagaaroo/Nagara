@@ -34,7 +34,8 @@ export function computeDemand(world: World) {
   const i = 0.1 + 1.0 * (indTarget - indJobs) / Math.max(30, indTarget) + (unemployed > earners * 0.12 ? 0.25 : 0);
   const offTarget = pop > 3500 ? earners * 0.17 : 0;
   const o = pop > 3500 ? 0.1 + 1.0 * (offTarget - offJobs) / Math.max(30, offTarget) + world.fields.edu2.reduce((a, v) => a + (v > 0 ? 1 : 0), 0) / 600 * 0.2 : 0;
-  st.demand = { r: sat(r), c: sat(c), i: sat(i), o: sat(o) };
+  const floor = pop < 4000 ? 0.55 : 0.2;
+  st.demand = { r: Math.max(floor, sat(r)), c: Math.max(floor, sat(c)), i: Math.max(floor * 0.9, sat(i)), o: pop > 3500 ? Math.max(0.2, sat(o)) : 0 };
 }
 
 function defWeight(def: BuildingDef, lv: number, tod: number, pop: number): number {
@@ -95,8 +96,7 @@ export function tryGrow(world: World, zoneTypes: { zone: Zone; w: number }[]): b
     if (!zone || world.buildGrid[k]) continue;
     const zt = zoneTypes.find((z) => z.zone === zone);
     if (!zt || rng() > zt.w) continue;
-    if (F.frontage[k] < 0.25) continue; // needs a road nearby
-    if (F.power[k] <= 0 || F.water[k] <= 0) { world.stats.unserved += 0; continue; }
+    if (!world.hasRoadAccess(x + 0.5, y + 0.5)) continue; // needs a road nearby
     if (!world.tileFree(x, y)) continue;
     const lv = F.landValue[k], tod = F.tod[k];
     const pop = world.stats.population;
@@ -138,16 +138,16 @@ export function growthStep(world: World) {
     { zone: Zone.ResLow, w: d.r }, { zone: Zone.ResMed, w: d.r }, { zone: Zone.ResHigh, w: d.r * 0.9 },
     { zone: Zone.Commercial, w: d.c }, { zone: Zone.Mixed, w: (d.r + d.c) / 2 }, { zone: Zone.Industrial, w: d.i }, { zone: Zone.Office, w: d.o },
   ];
-  const budget = Math.min(7, 1 + Math.floor(pop / 3500) + (world.unlockAll ? 1 : 0));
+  const budget = Math.min(8, 3 + Math.floor(pop / 3000));
   let made = 0;
-  for (let i = 0; i < budget + 2 && made < budget; i++) if (tryGrow(world, zt)) made++;
+  for (let i = 0; i < budget * 3 && made < budget; i++) if (tryGrow(world, zt)) made++;
 }
 
 export function constructionStep(world: World, dtDays: number) {
   for (const b of world.buildings.values()) {
     if (b.progress >= 1) continue;
     const def = DEFS[b.def];
-    const days = def.cat === 'landmark' ? 25 : def.cat === 'res' || def.cat === 'mixed' || def.cat === 'office' ? 3 + b.level * 0.5 : 4 + (def.w * def.h);
+    const days = def.cat === 'landmark' ? 12 : def.cat === 'res' || def.cat === 'mixed' || def.cat === 'office' ? 1.5 + b.level * 0.15 : 2 + def.w * def.h * 0.3;
     b.progress = Math.min(1, b.progress + dtDays / days);
     if (b.progress >= 1) { world.buildingVersion++; world.assignDirty = true; world.freightDirty = true; }
   }
@@ -169,7 +169,7 @@ export function newHousehold(world: World, b: Building): Citizen {
 }
 
 /** Daily: move residents in/out of completed homes. */
-export function occupancyStep(world: World) {
+export function occupancyStep(world: World, daily = true) {
   const st = world.stats;
   const jobsRatio = st.workers > 0 ? clamp(st.jobs / Math.max(1, st.workers), 0, 2) : 1;
   const attract = clamp(0.35 + st.happiness * 0.45 + (jobsRatio - 0.8) * 0.35 + (st.demand.r - 0.4) * 0.3, 0.05, 1);
@@ -182,7 +182,7 @@ export function occupancyStep(world: World) {
     b.residents = current;
     const served = b.powered && b.watered;
     const target = served ? cap * attract : 0;
-    if (!served) b.unserved += 1; else b.unserved = 0;
+    if (daily) { if (!served) b.unserved += 1; else b.unserved = 0; }
     if (b.unserved > 24 && !b.abandoned) { b.abandoned = true; world.buildingVersion++; world.notify(`${b.name} abandoned — no power or water`, 'warn'); }
     if (b.abandoned && served && b.unserved === 0) { b.abandoned = false; world.buildingVersion++; }
     if (current < target - 2 && !b.abandoned) {
@@ -209,7 +209,7 @@ export function occupancyStep(world: World) {
     if (b.progress < 1 || isHome(b)) continue;
     const def = DEFS[b.def];
     if (!(def.cat === 'com' || def.cat === 'ind' || def.cat === 'office' || def.cat === 'market')) continue;
-    if (!b.powered || !b.watered) b.unserved++; else b.unserved = Math.max(0, b.unserved - 1);
+    if (daily) { if (!b.powered || !b.watered) b.unserved++; else b.unserved = Math.max(0, b.unserved - 1); }
     if (b.unserved > 30 && !b.abandoned) { b.abandoned = true; world.buildingVersion++; }
     else if (b.abandoned && b.unserved === 0) { b.abandoned = false; world.buildingVersion++; }
   }

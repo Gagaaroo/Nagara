@@ -9,6 +9,7 @@ import { fmtMoney, fmtNum } from '../utils/math';
 import { OVERLAYS, OVERLAY_BY_KEY } from '../rendering/overlays';
 import { SPEEDS } from '../game/simulation/engine';
 import { TRANSIT } from '../game/transportation/transit';
+import { LAYOUTS } from '../data/layouts';
 import { RoadDesigner } from './RoadDesigner';
 import { Inspector } from './Inspector';
 import { TransitWizard } from './TransitWizard';
@@ -18,6 +19,7 @@ import { SaveList, SettingsScreen } from './Menus';
 const DOCKS: { k: Dock; label: string; icon: string }[] = [
   { k: 'roads', label: 'Roads', icon: 'road' },
   { k: 'zones', label: 'Zoning', icon: 'zone' },
+  { k: 'layouts', label: 'Layouts', icon: 'city' },
   { k: 'transit', label: 'Transport', icon: 'bus' },
   { k: 'services', label: 'Services', icon: 'service' },
   { k: 'utilities', label: 'Utilities', icon: 'utility' },
@@ -54,7 +56,24 @@ function Flyout() {
   if (d === 'none' || d === 'roads') return null;
   const list = (pred: (b: BuildingDef) => boolean) => BUILDINGS.filter(pred).map((b) => <BuildItem key={b.key} def={b} />);
   let content: React.ReactNode = null;
-  if (d === 'zones') {
+  if (d === 'layouts') {
+    content = (
+      <>
+        <h4>Preset layouts — place a whole complex in one click</h4>
+        <div className="items">
+          {LAYOUTS.map((l) => {
+            const locked = !w.isUnlocked(l.unlock);
+            return (
+              <button key={l.key} className={'item' + (locked ? ' locked' : '') + (s.tool === 'layout' && s.layoutKey === l.key ? ' on' : '')} disabled={locked} onClick={() => s.chooseLayout(l.key)}>
+                <b>{l.name}</b><span>{l.desc}</span><span className="dim">{l.items.length} buildings · {l.w}×{l.h} tiles</span><Lock pop={l.unlock} />
+              </button>
+            );
+          })}
+        </div>
+        <div className="muted" style={{ fontSize: 11.5, marginTop: 8 }}>Place beside a road on flat land. Green = will be built, red = blocked. Press T to rotate.</div>
+      </>
+    );
+  } else if (d === 'zones') {
     content = (
       <>
         <h4>Paint land use — drag a rectangle beside a road</h4>
@@ -209,7 +228,9 @@ export function GameHud() {
           <button className="ov" onClick={() => s.setPanel('help')}><Icon n="help" size={15} /><span>Help</span></button>
         </div>
         <div className="panel group">
-          {groups.map((g) => (
+          <button className={'ov' + (s.lensesOpen || s.overlay !== 'none' ? ' on' : '')} onClick={() => { s.lensesOpen = !s.lensesOpen; s.emit(); }}><Icon n="layers" size={15} /><span>Map lenses {s.lensesOpen ? '▾' : '▸'}</span></button>
+          {s.overlay !== 'none' && !s.lensesOpen && <button className="ov" onClick={() => s.setOverlay(s.overlay)}><Icon n="close" size={14} /><span>Clear lens</span></button>}
+          {s.lensesOpen && groups.map((g) => (
             <div key={g}>
               <div className="gh">{g}</div>
               {OVERLAYS.filter((o) => o.group === g).map((o) => <button key={o.key} className={'ov' + (s.overlay === o.key ? ' on' : '')} onClick={() => s.setOverlay(o.key)} title={o.hint}><i className="sw" /><span>{o.label}</span></button>)}
@@ -231,7 +252,7 @@ export function GameHud() {
       )}
 
       {rightPanel}
-      {s.intro && s.panel === 'none' && !s.selection && s.tool === 'select' && s.dock === 'none' && <Intro />}
+      {s.checklistOpen && <Checklist />}
       {s.debug && <DebugPanel />}
 
       <div className="toasts">{recent.map((m) => <div key={m.id} className={'toast ' + m.kind}>{m.text}</div>)}{s.message && <div className="toast">{s.message}</div>}</div>
@@ -320,6 +341,31 @@ function BuildInfo() {
   );
 }
 
+function Checklist() {
+  const s = useStore();
+  const w = s.world!;
+  const zoned = w.zones.reduce((a, v) => a + (v ? 1 : 0), 0);
+  const steps = [
+    { done: w.net.edges.size > s.baseline.edges, text: 'Build a road', sub: 'Roads → pick Local Street → click start, click end. Join it to an existing road.', act: () => s.openDock('roads') },
+    { done: zoned > s.baseline.zoned, text: 'Zone land beside it', sub: 'Zoning → Residential → drag a box next to the road.', act: () => s.openDock('zones') },
+    { done: w.buildings.size > s.baseline.buildings + 3, text: 'Watch buildings appear', sub: 'Make sure the game is playing (▶).', act: () => { s.sim?.setSpeed(1); s.emit(); } },
+    { done: w.lines.size > 0, text: 'Start a bus route', sub: 'Transport → New bus route.', act: () => s.openDock('transit') },
+  ];
+  const next = steps.findIndex((x) => !x.done);
+  return (
+    <div className="panel tutorial" style={{ flexDirection: 'column', gap: 6, maxWidth: 330 }}>
+      <div className="row space"><div className="tag">Getting started</div><button className="btn icon ghost sm" onClick={() => { s.checklistOpen = false; s.emit(); }}><Icon n="close" size={14} /></button></div>
+      {steps.map((st, i) => (
+        <div key={i} className="row" style={{ alignItems: 'flex-start', opacity: st.done || i === next ? 1 : 0.55 }}>
+          <span className="chip" style={{ background: st.done ? 'var(--green)' : i === next ? 'var(--amber)' : undefined, color: st.done || i === next ? '#16130a' : undefined, minWidth: 24, justifyContent: 'center' }}>{st.done ? '✓' : i + 1}</span>
+          <div className="grow"><b>{st.text}</b>{i === next && <div className="muted" style={{ fontSize: 12, marginTop: 2 }}>{st.sub}</div>}{i === next && <button className="btn sm primary" style={{ marginTop: 6 }} onClick={st.act}>Show me</button>}</div>
+        </div>
+      ))}
+      {next === -1 && <div className="good">Nice work — keep growing and watch the Mobility panel.</div>}
+    </div>
+  );
+}
+
 function Intro() {
   const s = useStore();
   const w = s.world!;
@@ -360,6 +406,7 @@ function Hints() {
   else if (s.tool === 'bulldoze') text = <>Click a building, stop or road to demolish it.</>;
   else if (s.tool === 'upgrade') text = <>Click a road to apply the current road design to it.</>;
   else if (s.tool === 'building') text = <>Click to place. <kbd>T</kbd> rotates.</>;
+  else if (s.tool === 'layout') text = <>Click to place the whole layout beside a road. <kbd>T</kbd> rotates. Green = buildable.</>;
   else if (w.stats.population < 700 && w.day < 6 && s.dock === 'none' && !s.selection) text = <>Open <b>Roads</b> to draw a street, <b>Zoning</b> to grow homes and shops, and <b>Transport</b> to add buses. Right-drag to rotate · wheel to zoom.</>;
   if (!text) return null;
   return <div className="panel hint">{text}</div>;

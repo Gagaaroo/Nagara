@@ -6,6 +6,7 @@ import { quadBezier, lineSamples } from '../game/roads/geometry';
 import { DEFS, ZONE_INFO } from '../data/buildings';
 import { addBusStop } from '../game/transportation/transit';
 import { Build } from '../game/types';
+import { LAYOUTS, rotateLayout } from '../data/layouts';
 
 export interface Pick { x: number; y: number; h: number }
 
@@ -20,9 +21,9 @@ export class ToolController {
   /** Snap a cursor position to nearby nodes or road centrelines. */
   snap(p: Pick, shift = false): [number, number] {
     const w = this.w;
-    const nd = w.net.nearestNode(p.x, p.y, 0.9);
+    const nd = w.net.nearestNode(p.x, p.y, 1.7);
     if (nd) return [nd.x, nd.y];
-    const ne = w.net.nearestEdge(p.x, p.y, 0.6, (e) => e.structure === 'ground' || e.structure === 'depressed');
+    const ne = w.net.nearestEdge(p.x, p.y, 1.3, (e) => e.structure === 'ground' || e.structure === 'depressed');
     if (ne && ne.s > 0.25 && ne.s < ne.e.len - 0.25) return [ne.x, ne.y];
     let x = p.x, y = p.y;
     const pts = this.store.roadDraft.pts;
@@ -97,16 +98,18 @@ export class ToolController {
   move(p: Pick | null, shift: boolean) {
     const s = this.store;
     this.view.lastPick = p;
+    this.view.preview.setGrid(p && (s.tool === 'zone' || s.tool === 'building' || s.tool === 'road') ? p : null);
     if (!p) return;
     const key = `${p.x.toFixed(2)},${p.y.toFixed(2)},${s.tool},${s.roadDraft.pts.length},${s.buildRot},${s.buildKey}`;
     if (key === this.lastMoveKey) return;
     this.lastMoveKey = key;
     switch (s.tool) {
       case 'road': {
+        const w0 = this.w;
         if (s.roadDraft.pending) return;
         const c = this.snap(p, shift);
         if (s.roadDraft.pts.length) this.replan(c);
-        else this.view.preview.marker(c[0], c[1], 0x9bd0ff);
+        else { const snapped = !!w0.net.nearestEdge(c[0], c[1], 0.05) || !!w0.net.nearestNode(c[0], c[1], 0.05); this.view.preview.marker(c[0], c[1], snapped ? 0x4cd964 : 0x9bd0ff); }
         break;
       }
       case 'building': {
@@ -117,6 +120,11 @@ export class ToolController {
         const issue = buildingIssue(this.w, s.buildKey, x, y, s.buildRot);
         if (issue !== s.buildIssue) { s.buildIssue = issue; s.emit(); }
         this.view.preview.building(s.buildKey, x, y, s.buildRot, !issue);
+        break;
+      }
+      case 'layout': {
+        const r = this.layoutAt(p);
+        if (r) this.view.preview.layout(r.items, r.ok);
         break;
       }
       case 'zone': {
@@ -137,6 +145,18 @@ export class ToolController {
       case 'bulldoze': this.view.setHoverPick(p, 'bulldoze'); this.view.preview.clear(); break;
       case 'upgrade': case 'select': this.view.setHoverPick(p, s.tool); this.view.preview.clear(); break;
     }
+  }
+
+  private layoutAt(p: Pick) {
+    const s = this.store;
+    const lay = LAYOUTS.find((l) => l.key === s.layoutKey);
+    if (!lay) return null;
+    const rot = rotateLayout(lay, s.buildRot);
+    const W = Math.max(...rot.map((i) => i.ox + i.w)), H = Math.max(...rot.map((i) => i.oy + i.h));
+    const bx = Math.floor(p.x - W / 2 + 0.5), by = Math.floor(p.y - H / 2 + 0.5);
+    const items = rot.map((i) => ({ key: i.key, x: bx + i.ox, y: by + i.oy, rot: i.rot, w: i.w, h: i.h }));
+    const ok = items.map((i) => { const d = DEFS[i.key]; if (!this.w.canPlace(d, i.x, i.y, i.rot).ok) return false; if (!this.w.isUnlocked(d.unlock)) return false; const needs = d.cat === 'service' || d.cat === 'transit'; return !needs || !!this.w.findAccess(i.x, i.y, i.w, i.h); });
+    return { items, ok };
   }
 
   private paintPreview(x0: number, y0: number, x1: number, y1: number) {
@@ -169,7 +189,14 @@ export class ToolController {
     const s = this.store;
     if (s.tool === 'zone' && this.zoneStart && p) {
       const r = zoneRect(this.w, this.zoneStart.x, this.zoneStart.y, Math.floor(p.x), Math.floor(p.y), s.zone);
-      s.flash(r.msg);
+      let msg = r.msg;
+      if (r.ok && s.zone !== Zone.None) {
+        let far = 0, tot = 0;
+        for (let y = Math.min(this.zoneStart.y, Math.floor(p.y)); y <= Math.max(this.zoneStart.y, Math.floor(p.y)); y++) for (let x = Math.min(this.zoneStart.x, Math.floor(p.x)); x <= Math.max(this.zoneStart.x, Math.floor(p.x)); x++) if (this.w.zones[this.w.idx(x, y)] === s.zone) { tot++; if (!this.w.hasRoadAccess(x + 0.5, y + 0.5)) far++; }
+        msg = far > tot / 2 ? `Zoned ${tot} tiles — most are too far from a road. Draw a road beside them so buildings can grow.` : `Zoned ${tot} tiles — buildings will appear shortly${far ? ` (${far} tiles are too far from a road)` : ''}.`;
+        if (s.sim && s.sim.speedIndex === 0) s.sim.setSpeed(1);
+      }
+      s.flash(msg);
       this.zoneStart = null;
       this.view.preview.clear();
       this.view.markZonesDirty();
@@ -218,6 +245,15 @@ export class ToolController {
         break;
       }
       case 'linepick': this.pickForLine(p); break;
+      case 'layout': {
+        const r = this.layoutAt(p);
+        if (!r) break;
+        let placed = 0;
+        r.items.forEach((it, i) => { if (r.ok[i] && placeBuilding(w, it.key, it.x, it.y, it.rot).ok) placed++; });
+        s.flash(placed ? `Placed ${placed} of ${r.items.length} buildings` : 'Nothing could be placed here — move closer to a road on flat land');
+        if (placed) { this.view.markBuildingsDirty(); this.lastMoveKey = ''; if (s.sim && s.sim.speedIndex === 0) s.sim.setSpeed(1); }
+        break;
+      }
       case 'zone': break;
     }
   }

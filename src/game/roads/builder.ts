@@ -19,6 +19,7 @@ export interface RoadPlan {
   tunnelLen: number;
   maxGrade: number;
   compensation: number;
+  connected: boolean; // touches or crosses the existing network
 }
 
 const SPACING = 0.5;
@@ -43,7 +44,7 @@ function resample(path: number[]): number[] {
 
 /** Analyse a hand-drawn path: structures, grades, junctions, cost, validity. Pure — does not mutate. */
 export function planRoad(world: World, rawPath: number[], spec: RoadSpec, mode: StructureMode): RoadPlan {
-  const plan: RoadPlan = { pieces: [], cost: 0, valid: false, issues: [], warnings: [], junctions: [], demolish: [], length: 0, bridgeLen: 0, tunnelLen: 0, maxGrade: 0, compensation: 0 };
+  const plan: RoadPlan = { pieces: [], cost: 0, valid: false, issues: [], warnings: [], junctions: [], demolish: [], length: 0, bridgeLen: 0, tunnelLen: 0, maxGrade: 0, compensation: 0, connected: false };
   const t = world.terrain;
   const net = world.net;
   if (rawPath.length < 4) { plan.issues.push('Draw a longer road'); return plan; }
@@ -56,11 +57,11 @@ export function planRoad(world: World, rawPath: number[], spec: RoadSpec, mode: 
   // ── endpoint snapping ──
   const snapEnd = (idx: number) => {
     const x = P[idx * 2], y = P[idx * 2 + 1];
-    const nd = net.nearestNode(x, y, 1.0);
+    const nd = net.nearestNode(x, y, 1.7);
     if (nd) { P[idx * 2] = nd.x; P[idx * 2 + 1] = nd.y; return nd; }
     if (mode === 'auto' || mode === 'ground') {
-      const ne = net.nearestEdge(x, y, 0.7, (e) => e.structure === 'ground' || e.structure === 'depressed');
-      if (ne && ne.s > 0.2 && ne.s < ne.e.len - 0.2) { P[idx * 2] = ne.x; P[idx * 2 + 1] = ne.y; return ne.e; }
+      const ne = net.nearestEdge(x, y, 1.3, (e) => e.structure === 'ground' || e.structure === 'depressed');
+      if (ne && ne.s > 0.3 && ne.s < ne.e.len - 0.3) { P[idx * 2] = ne.x; P[idx * 2 + 1] = ne.y; return ne.e; }
     }
     return null;
   };
@@ -180,7 +181,7 @@ export function planRoad(world: World, rawPath: number[], spec: RoadSpec, mode: 
     }
     // near existing nodes mid-way: connect to them
     if (k > 0) {
-      const nd = net.nearestNode(ax, ay, 0.42);
+      const nd = net.nearestNode(ax, ay, 0.8);
       if (nd && isGround(st[k]) && !bps.some((b) => Math.abs(b.pos - k) < 1.2)) { P[k * 2] = nd.x; P[k * 2 + 1] = nd.y; bps.push({ pos: k, x: nd.x, y: nd.y, kind: 'existing' }); }
     }
   }
@@ -266,8 +267,8 @@ export function planRoad(world: World, rawPath: number[], spec: RoadSpec, mode: 
       break;
     }
   }
-  if (plan.maxGrade > 0.14) plan.issues.push(`Grade ${(plan.maxGrade * 100).toFixed(0)}% is too steep for vehicles`);
-  else if (plan.maxGrade > 0.09) plan.warnings.push(`Steep grade ${(plan.maxGrade * 100).toFixed(0)}% slows traffic and raises cost`);
+  if (plan.maxGrade > 0.26) plan.issues.push(`Grade ${(plan.maxGrade * 100).toFixed(0)}% is too steep for vehicles`);
+  else if (plan.maxGrade > 0.12) plan.warnings.push(`Steep grade ${(plan.maxGrade * 100).toFixed(0)}% slows traffic and raises cost`);
   if (plan.tunnelLen > 0) plan.warnings.push(`Tunnel ${(plan.tunnelLen * TILE_M).toFixed(0)} m — limited capacity, expensive`);
   if (plan.bridgeLen > 0) plan.warnings.push(`Bridge ${(plan.bridgeLen * TILE_M).toFixed(0)} m`);
   if (spec.speed >= 80 && !isGround(st[0])) plan.warnings.push('High-speed roads are noisy');
@@ -284,6 +285,8 @@ export function planRoad(world: World, rawPath: number[], spec: RoadSpec, mode: 
   plan.cost += plan.compensation;
 
   for (const b of keep) plan.junctions.push({ x: b.x, y: b.y, kind: b.kind });
+  plan.connected = keep.some((b) => b.kind !== 'new');
+  if (!plan.connected && net.edges.size > 0) plan.warnings.unshift('Not connected to any road — drag its end onto an existing road');
   plan.valid = plan.issues.length === 0;
   if (plan.length > MAX_LEN) plan.valid = false;
   return plan;
