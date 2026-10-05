@@ -154,8 +154,14 @@ export function createWorld(params: MapParams, terrainOverride?: Terrain): World
     if (!sp) return null;
     return world.placeBuilding(DEFS[key], sp.x, sp.y, 0, { free: true, instant: true, wealth: 1 });
   };
-  place('power_small', -17, 13);
-  place('substation', -2, 9);
+  const plant = place('power_small', -17, 13);
+  {
+    // keep the grid connected: the substation sits on the line between the plant and the town centre
+    let sx = cx, sy = cy;
+    if (plant) { const dx = plant.x - cx, dy = plant.y - cy, L = Math.hypot(dx, dy) || 1; const k = Math.min(L * 0.5, 9) / L; sx = cx + dx * k; sy = cy + dy * k; }
+    const sp = findSpot(world, 'substation', sx, sy, 0, 8, {}) ?? findSpot(world, 'substation', cx, cy, 2, 14, {});
+    if (sp) world.placeBuilding(DEFS.substation, sp.x, sp.y, 0, { free: true, instant: true, wealth: 1 });
+  }
   place('borewell', 4, -9);
   place('borewell', -6, -9);
   place('water_tower', -1, -8);
