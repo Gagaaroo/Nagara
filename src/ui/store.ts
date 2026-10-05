@@ -170,6 +170,7 @@ class Store {
 
   // ───── tools ─────
   setTool(t: ToolId) {
+    if (this.tool === 'zone' && t !== 'zone' && this.overlay === 'zones') this.overlay = 'none';
     this.tool = t;
     this.roadDraft = { pts: [], plan: null, pending: false, path: [] };
     this.buildIssue = null;

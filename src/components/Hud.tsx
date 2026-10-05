@@ -89,6 +89,7 @@ function Flyout() {
           })}
           <button className={'item' + (s.tool === 'zone' && s.zone === Zone.None ? ' on' : '')} onClick={() => s.chooseZone(Zone.None)}><b>Clear zoning</b><span>Remove the zone from tiles (buildings stay).</span></button>
         </div>
+        <div className="row" style={{ marginTop: 10 }}><button className="btn sm primary" onClick={() => { s.dock = 'layouts'; s.emit(); }}>Or place a ready-made layout (colony, market, mall, office park…) →</button></div>
         <div className="muted" style={{ fontSize: 11.5, marginTop: 8 }}>Buildings grow on zoned tiles within ~3 tiles of a road that also have power and water. Mixed-use and TOD near stations grow denser.</div>
       </>
     );
@@ -347,7 +348,7 @@ function Checklist() {
   const zoned = w.zones.reduce((a, v) => a + (v ? 1 : 0), 0);
   const steps = [
     { done: w.net.edges.size > s.baseline.edges, text: 'Build a road', sub: 'Roads → pick Local Street → click start, click end. Join it to an existing road.', act: () => s.openDock('roads') },
-    { done: zoned > s.baseline.zoned, text: 'Zone land beside it', sub: 'Zoning → Residential → drag a box next to the road.', act: () => s.openDock('zones') },
+    { done: zoned > s.baseline.zoned, text: 'Zone land beside it', sub: 'Zoning → drag a box next to the road, or use Layouts for ready-made complexes.', act: () => s.openDock('zones') },
     { done: w.buildings.size > s.baseline.buildings + 3, text: 'Watch buildings appear', sub: 'Make sure the game is playing (▶).', act: () => { s.sim?.setSpeed(1); s.emit(); } },
     { done: w.lines.size > 0, text: 'Start a bus route', sub: 'Transport → New bus route.', act: () => s.openDock('transit') },
   ];
